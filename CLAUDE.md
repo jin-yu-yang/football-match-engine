@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This is a football (soccer) match engine based on the 2D RoboCup Soccer Simulator (`rcssserver`) and HELIOS base team (`helios-base`).
+This is a football (soccer) match engine inspired by the 2D RoboCup Soccer Simulator (`rcssserver`) and HELIOS base team (`helios-base`).
 
 ## Specs: where the source of truth lives
 
