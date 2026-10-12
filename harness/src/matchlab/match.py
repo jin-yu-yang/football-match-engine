@@ -169,6 +169,7 @@ def _kill_group(pgid: int, server: subprocess.Popen | None) -> None:
 def run_single_match(profile: Profile, *, match_seed: int, run_dir: Path, manifest: Manifest, slot: int = 0,
                      timeout_s: float = 3600.0, profile_hash: str | None = None, swapped: bool = False,
                      cancel: threading.Event | None = None) -> MatchRecord:
+    run_dir = Path(run_dir).resolve()  # the server runs with cwd=run_dir and gets log dirs, so the path must be absolute
     ports = port_set(slot)
     ensure_free(ports)
     run_dir.mkdir(parents=True, exist_ok=False)

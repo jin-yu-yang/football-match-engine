@@ -76,6 +76,7 @@ def _env(manifest: Manifest) -> dict[str, str]:
 
 
 def extract_and_measure(run_dir: Path, manifest: Manifest) -> dict | None:
+    run_dir = Path(run_dir).resolve()  # rcg2data runs with cwd=run_dir, so the log path must be absolute
     rcg = run_dir / "match.rcg"
     try:
         result = subprocess.run([str(manifest.rcg2data), str(rcg)], cwd=run_dir, env=_env(manifest),

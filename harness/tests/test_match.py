@@ -2,6 +2,7 @@ import json
 import socket
 import threading
 import time
+from pathlib import Path
 
 import pytest
 
@@ -160,3 +161,12 @@ def test_interrupt_kills_processes(fake_testbed, tmp_path, monkeypatch):
                          manifest=fake_testbed, slot=15, timeout_s=30)
     assert wait_dead(children(tmp_path / "fakeout"))
     assert record(tmp_path / "run")["status"] == "cancelled"
+
+
+def test_relative_run_dir(fake_testbed, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    rec = run_single_match(load_profile("short"), match_seed=1, run_dir=Path("rel/run"),
+                           manifest=fake_testbed, slot=18, timeout_s=30)
+    assert rec.status == "ok", rec.error
+    assert rec.run_dir.is_absolute()
+    assert (tmp_path / "rel" / "run" / "match.rcg").is_file()

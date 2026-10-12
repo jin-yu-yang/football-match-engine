@@ -80,3 +80,12 @@ def test_log_without_score_is_extraction_failure(fake_testbed, tmp_path):
     assert extract_and_measure(run_dir, fake_testbed) is None
     record = json.loads((run_dir / "run.json").read_text())
     assert record["status"] == "extraction-failed" and "no final score" in record["error"]
+
+
+def test_extract_with_relative_run_dir(fake_testbed, tmp_path, monkeypatch):
+    run_dir_with_log(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    metrics = extract_and_measure(Path("run"), fake_testbed)
+    assert metrics is not None
+    assert (tmp_path / "run" / "metrics.json").is_file()
+    assert json.loads((tmp_path / "run" / "run.json").read_text())["extraction"] == "ok"
