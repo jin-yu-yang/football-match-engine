@@ -1,4 +1,9 @@
-## ADDED Requirements
+# benchmark-experiments Specification
+
+## Purpose
+Run paired-seed A/B experiments over two match profiles and report per-arm statistics, paired differences with confidence intervals, and a replay check, as JSON and Markdown.
+
+## Requirements
 
 ### Requirement: Experiment definition
 The harness SHALL read an experiment from a TOML file. The file MUST name two arms (A and B), the number of matches N and a base seed. Each arm MUST be a profile, optionally with overrides. It MAY set `swap_sides`, which defaults to false.

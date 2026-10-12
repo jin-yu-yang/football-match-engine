@@ -1,3 +1,7 @@
+## Purpose
+
+Run seeded RoboCup testbed matches under versioned TOML profiles, with user-controlled seeds and noise, one run folder per match, ordered team connection, reliable process cleanup and a reproducibility check.
+
 ## ADDED Requirements
 
 ### Requirement: TOML match profiles

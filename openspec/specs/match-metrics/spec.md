@@ -1,4 +1,9 @@
-## ADDED Requirements
+# match-metrics Specification
+
+## Purpose
+Extract SPADL events from a match's game log with rcg2data and compute per-match metrics that the pinned rcg2data can actually support.
+
+## Requirements
 
 ### Requirement: SPADL event extraction
 The harness SHALL run rcg2data on the game log of each finished match. It MUST store the resulting events CSV in the match run folder. If rcg2data fails, the harness MUST record the failure in the run record and MUST NOT write metrics for that match.

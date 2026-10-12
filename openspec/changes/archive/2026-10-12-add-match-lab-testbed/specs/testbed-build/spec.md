@@ -1,3 +1,7 @@
+## Purpose
+
+Build the RoboCup 2D testbed (rcssserver, librcsc, HELIOS, the Cyrus team and its librcsc fork, CppDNN, Eigen and rcg2data) from pinned upstream sources plus repository patch files, into an isolated build folder with a manifest.
+
 ## ADDED Requirements
 
 ### Requirement: Pinned testbed sources
