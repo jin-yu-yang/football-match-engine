@@ -48,12 +48,12 @@
 
 ## 7. Benchmark experiments (benchmark-experiments)
 
-- [ ] 7.1 Implement the experiment TOML loader (two arms, overrides, N, base seed, `swap_sides`)
-- [ ] 7.2 Implement paired execution of both arms with the same seeds, including `swap_sides`, and exclusion of failed pairs
+- [x] 7.1 Implement the experiment TOML loader (two arms, overrides, N, base seed, `swap_sides`)
+- [x] 7.2 Implement paired execution of both arms with the same seeds, including `swap_sides`, and exclusion of failed pairs
 - [x] 7.3 Implement the statistics: per-arm means, Wilson 95% intervals for W/D/L, mean paired goal-difference delta with a seeded 95% percentile bootstrap; test against known values
-- [ ] 7.4 Implement `report.json` and `report.md`; test that the same results give identical reports
-- [ ] 7.5 Implement `run_experiment` returning the result object
-- [ ] 7.6 After both arms, replay arm A's first seed and put the reproducibility result in the report; report missed-cycle counts per arm
+- [x] 7.4 Implement `report.json` and `report.md`; test that the same results give identical reports
+- [x] 7.5 Implement `run_experiment` returning the result object
+- [x] 7.6 After both arms, replay arm A's first seed and put the reproducibility result in the report; report missed-cycle counts per arm
 
 ## 8. CLI and end-to-end checks
 
