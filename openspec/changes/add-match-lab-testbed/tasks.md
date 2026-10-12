@@ -42,9 +42,9 @@
 
 ## 6. Match metrics (match-metrics)
 
-- [ ] 6.1 Implement the rcg2data call and failure recording; the events CSV goes into the run folder
-- [ ] 6.2 Implement the final-score parser for `.rcg` files and the events CSV parser
-- [ ] 6.3 Implement per-side metrics (goals, goal difference, shots, passes, pass completion with null for no passes, interceptions by `Side2`, tackles, fouls from play modes, `event_possession_share`) and the versioned metrics JSON; test with a fixture log and a hand-made events CSV
+- [x] 6.1 Implement the rcg2data call and failure recording; the events CSV goes into the run folder
+- [x] 6.2 Implement the final-score parser for `.rcg` files and the events CSV parser
+- [x] 6.3 Implement per-side metrics (goals, goal difference, shots, passes, pass completion with null for no passes, interceptions by `Side2`, tackles, fouls from play modes, `event_possession_share`) and the versioned metrics JSON; test with a fixture log and a hand-made events CSV
 
 ## 7. Benchmark experiments (benchmark-experiments)
 
