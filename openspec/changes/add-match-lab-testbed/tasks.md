@@ -57,7 +57,7 @@
 
 ## 8. CLI and end-to-end checks
 
-- [ ] 8.1 Implement the CLI subcommands `build`, `run`, `experiment` and `check-repro` on top of the API
+- [x] 8.1 Implement the CLI subcommands `build`, `run`, `experiment` and `check-repro` on top of the API
 - [ ] 8.2 Add an integration test (marked, skipped when the manifest is missing) that runs a `short` HELIOS vs HELIOS match end to end and checks the run folder, events CSV and metrics JSON
 - [ ] 8.3 Run a demo A/B experiment (`default` vs `noise-off`, short matches, small N) and check the report contents
 - [ ] 8.4 Write `harness/README.md` in simplified technical English: system dependencies, build, run, experiment, reproducibility status and its reason
