@@ -39,10 +39,25 @@ def test_load_and_arm_override(tmp_path):
     (("[arms.B]", "[arms.C]"), "arms A and B"),
     (('name = "demo"', 'name = "bad name"'), "name"),
     (("[arms.B.overrides.server]", "[arms.B.overrides.noise]"), "overrides"),
+    (("[arms.B.overrides.server]", "[arms.B.override.server]"), "arms.B: unknown key\\(s\\): override"),
+    (('[arms.B.overrides.server]\nplayer_rand = 0\n', 'overrides = 5\n'), "arms.B.overrides: must be a table"),
 ])
 def test_bad_experiments(tmp_path, change, message):
     with pytest.raises(ExperimentError, match=message):
         load_experiment(write_exp(tmp_path, BODY.replace(*change)))
+
+
+def test_replay_os_error_is_not_checked(fake_testbed, tmp_path, monkeypatch):
+    import matchlab.experiment as experiment_mod
+
+    def unreadable_replay(*args, **kwargs):
+        raise FileNotFoundError("x")
+
+    monkeypatch.setattr(experiment_mod, "replay_and_compare", unreadable_replay)
+    out = tmp_path / "out"
+    result = run_experiment(write_exp(tmp_path, BODY), out_dir=out, manifest=fake_testbed)
+    assert result.report["reproducibility"]["status"] == "not-checked"
+    assert json.loads((out / "report.json").read_text())["reproducibility"]["status"] == "not-checked"
 
 
 def test_run_experiment_with_fake_testbed(fake_testbed, tmp_path):

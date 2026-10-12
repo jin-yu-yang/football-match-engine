@@ -18,6 +18,7 @@ from .seeds import match_seeds
 _NAME = re.compile(r"^[A-Za-z0-9_-]+$")
 _OVERRIDE_SECTIONS = frozenset({"match", "server", "player", "teams"})
 _KEYS = frozenset({"name", "matches", "base_seed", "swap_sides", "timeout_s", "arms"})
+_ARM_KEYS = frozenset({"profile", "overrides"})
 
 
 class ExperimentError(ValueError):
@@ -89,10 +90,17 @@ def load_experiment(path: Path) -> Experiment:
     arms = {}
     for key in ("A", "B"):
         entry = arms_raw[key]
-        profile = entry.get("profile") if isinstance(entry, dict) else None
+        if not isinstance(entry, dict):
+            raise ExperimentError(f"arms.{key}: must be a table")
+        unknown_keys = sorted(set(entry) - _ARM_KEYS)
+        if unknown_keys:  # a typo such as [arms.B.override.server] must not pass silently
+            raise ExperimentError(f"arms.{key}: unknown key(s): {', '.join(unknown_keys)}")
+        profile = entry.get("profile")
         if not isinstance(profile, str) or not profile:
             raise ExperimentError(f"arms.{key}.profile: name a profile")
         overrides = entry.get("overrides", {})
+        if not isinstance(overrides, dict):
+            raise ExperimentError(f"arms.{key}.overrides: must be a table")
         bad = sorted(set(overrides) - _OVERRIDE_SECTIONS)
         if bad:
             raise ExperimentError(f"arms.{key}.overrides: unknown section(s): {', '.join(bad)}")
@@ -109,7 +117,7 @@ def _replay_first_match(first: MatchResult, profile, out: Path, manifest: Manife
     try:
         repro = replay_and_compare(profile, first.match_seed, first.run_dir, out / "repro-A-0000", manifest,
                                    timeout_s=timeout_s, profile_hash=profile.hash)
-    except RuntimeError as exc:
+    except (RuntimeError, OSError) as exc:  # a missing or unreadable log must not abort the experiment
         result["reason"] = str(exc)
         return result
     result.update(status=repro.status, first_difference=repro.first_difference,

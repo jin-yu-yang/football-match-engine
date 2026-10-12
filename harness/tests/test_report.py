@@ -68,6 +68,19 @@ def test_no_pairs_still_reports():
     assert "n/a" in text and "not-checked" in text and "status error" in text
 
 
+def test_differs_is_explained_with_excerpts():
+    differs = {"checked_run": "A/0000-normal", "status": "differs",
+               "first_difference": {"line": 3, "cycle": None, "a": "x", "b": "y", "offset": 10},
+               "skipped_prefixes": ["(server_param"], "reason": None}
+    a = [result(0, 1, 0)]
+    text = render_markdown(build_report(EXP, [1], arms(a, a), differs))
+    assert ("- Note: the replay differs. In the testbed, reproducibility is statistical: the same profile "
+            "and seed give the same distribution of results, not the same game log (design D5).") in text
+    assert "cycle n/a" in text
+    assert "- Run a: `x`" in text and "- Run b: `y`" in text
+    assert "Byte offset: 10" in text
+
+
 def test_report_is_deterministic():
     a = [result(i, i % 3, 1) for i in range(5)]
     b = [result(i, (i + 1) % 3, 1) for i in range(5)]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -89,6 +90,18 @@ def _rate_text(rate: dict) -> str:
     return f"{_num(rate['rate'])} {_ci(rate['ci95'])}"
 
 
+DIFFERS_NOTE = ("- Note: the replay differs. In the testbed, reproducibility is statistical: the same profile and "
+                "seed give the same distribution of results, not the same game log (design D5).")
+
+
+def _code(text: str) -> str:
+    """Wrap text as Markdown inline code, with a fence longer than any backtick run inside it."""
+    longest = max((len(run) for run in re.findall(r"`+", text)), default=0)
+    fence = "`" * (longest + 1)
+    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    return f"{fence}{pad}{text}{pad}{fence}"
+
+
 def render_markdown(report: dict) -> str:
     paired = report["paired_goal_difference"]
     repro = report["reproducibility"]
@@ -130,9 +143,16 @@ def render_markdown(report: dict) -> str:
               f"- Result: {repro['status']}"]
     if repro.get("reason"):
         lines.append(f"- Reason: {repro['reason']}")
+    if repro["status"] == "differs":
+        lines.append(DIFFERS_NOTE)
     if repro.get("first_difference"):
         d = repro["first_difference"]
-        lines.append(f"- First difference: line {d['line']}, cycle {d['cycle']}")
+        cycle = "n/a" if d["cycle"] is None else d["cycle"]
+        lines.append(f"- First difference: line {d['line']}, cycle {cycle}")
+        if d.get("offset") is not None:
+            lines.append(f"- Byte offset: {d['offset']}")
+        lines.append(f"- Run a: {_code(d['a'])}")
+        lines.append(f"- Run b: {_code(d['b'])}")
     if repro.get("skipped_prefixes"):
         lines.append(f"- Skipped line prefixes: {', '.join(repro['skipped_prefixes'])}")
     lines += ["", "## Seeds", "", ", ".join(str(s) for s in report["seeds"]), ""]

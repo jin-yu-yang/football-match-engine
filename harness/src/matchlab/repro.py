@@ -24,8 +24,28 @@ class ReproResult:
     skipped: tuple[str, ...]
 
 
-def _text(line: bytes | None) -> str:
-    return "<end of file>" if line is None else line.rstrip(b"\n").decode(errors="replace")[:200]
+EXCERPT_BEFORE = 80  # bytes shown before the first differing byte
+EXCERPT_AFTER = 120  # bytes shown from the first differing byte on
+
+
+def _offset(a: bytes | None, b: bytes | None) -> int:
+    """Index of the first differing byte, or the length of the shorter line."""
+    a, b = a or b"", b or b""
+    limit = min(len(a), len(b))
+    for i in range(limit):
+        if a[i] != b[i]:
+            return i
+    return limit
+
+
+def _excerpt(line: bytes | None, offset: int) -> str:
+    if line is None:
+        return "<end of file>"
+    text = line.rstrip(b"\n")
+    start = max(0, offset - EXCERPT_BEFORE)
+    end = offset + EXCERPT_AFTER
+    piece = text[start:end].decode(errors="replace")
+    return ("..." if start > 0 else "") + piece + ("..." if end < len(text) else "")
 
 
 def compare_rcg(a: Path, b: Path, skip_prefixes: tuple[bytes, ...] = SKIP_PREFIXES) -> ReproResult:
@@ -41,8 +61,10 @@ def compare_rcg(a: Path, b: Path, skip_prefixes: tuple[bytes, ...] = SKIP_PREFIX
             if la is not None and lb is not None and any(
                     la.startswith(p) and lb.startswith(p) for p in skip_prefixes):
                 continue
-            return ReproResult("differs", {"line": number, "cycle": cycle, "a": _text(la), "b": _text(lb)},
-                               skipped)
+            offset = _offset(la, lb)
+            difference = {"line": number, "cycle": cycle, "offset": offset,
+                          "a": _excerpt(la, offset), "b": _excerpt(lb, offset)}
+            return ReproResult("differs", difference, skipped)
     return ReproResult("identical", None, skipped)
 
 

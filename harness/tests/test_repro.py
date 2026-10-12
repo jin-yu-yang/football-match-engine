@@ -26,6 +26,17 @@ def test_shorter_file_differs(tmp_path):
     assert compare_rcg(tmp_path / "a", tmp_path / "b").first_difference["b"] == "<end of file>"
 
 
+def test_long_line_offset_and_excerpts(tmp_path):
+    before = b"(show 1 " + b"x" * 892           # 900 bytes before the differing byte
+    (tmp_path / "a").write_bytes(before + b"X" + b"x" * 99 + b"\n")
+    (tmp_path / "b").write_bytes(before + b"Y" + b"x" * 99 + b"\n")
+    result = compare_rcg(tmp_path / "a", tmp_path / "b")
+    assert result.status == "differs"
+    assert result.first_difference["offset"] == 900
+    assert "X" in result.first_difference["a"] and "Y" in result.first_difference["b"]
+    assert len(result.first_difference["a"]) < 300
+
+
 def test_skipped_prefix_is_listed(tmp_path):
     (tmp_path / "a").write_bytes(b"(stamp 1)\n" + A)
     (tmp_path / "b").write_bytes(b"(stamp 2)\n" + A)
