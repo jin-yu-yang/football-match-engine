@@ -336,10 +336,16 @@ benchmark experiments.
 
 - **Choice**: run `rcg2data` on each `.rcg`. Python then computes per side:
   - goals (from the final `team` record in the `.rcg`) and goal difference;
-  - shots (`Shoot`);
-  - passes (`Pass`) and pass completion (successful passes / passes);
+  - passes (`Pass`);
+  - a ball-retention proxy, `ball_retention`: successful `Pass` rows /
+    (successful `Pass` rows + `Interception` rows in which the side lost
+    the ball, `Side1` = side); null when both are 0;
+  - no shots, tackles or pass completion (user decision, 2026-10-12, after
+    the final review): the pinned rcg2data emits `Shoot` only when a goal
+    is scored, never emits `Tackle`, and records an intercepted pass as an
+    `Interception` row, so those three values would read goals, 0 and 1.0;
   - interceptions (`Interception`, counted for `Side2`, the side that won
-    the ball) and tackles (`Tackle`, counted for `Side1`);
+    the ball);
   - fouls, from `foul_*_l` / `foul_*_r` play modes in the `.rcg`. rcg2data
     defines a `Foul` type but never emits it;
   - an event-based possession share: the side's share of `Pass`, `Dribble`

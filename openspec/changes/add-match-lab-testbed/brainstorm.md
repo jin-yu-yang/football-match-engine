@@ -323,3 +323,5 @@ and `swap_sides` is an experiment option, not a profile option (D9).
 **Correction to §3.2 and §3.5.** Matches run in a thread pool, not a process
 pool: each match is a set of subprocesses, so threads only wait. A queue of port
 slots keeps two running matches from sharing ports (design D7).
+
+**Q15. Unsupported metrics (2026-10-12, after the final review).** The pinned rcg2data emits `Shoot` only for goals, never emits `Tackle`, and records an intercepted pass as an `Interception` row. **Decision (user): drop shots and tackles; replace pass completion with a labelled `ball_retention` proxy** (successful passes / (successful passes + balls lost to an interception)).

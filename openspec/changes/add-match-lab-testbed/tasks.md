@@ -44,7 +44,7 @@
 
 - [x] 6.1 Implement the rcg2data call and failure recording; the events CSV goes into the run folder
 - [x] 6.2 Implement the final-score parser for `.rcg` files and the events CSV parser
-- [x] 6.3 Implement per-side metrics (goals, goal difference, shots, passes, pass completion with null for no passes, interceptions by `Side2`, tackles, fouls from play modes, `event_possession_share`) and the versioned metrics JSON; test with a fixture log and a hand-made events CSV
+- [x] 6.3 Implement per-side metrics (goals, goal difference, passes, interceptions by `Side2`, fouls from play modes, `event_possession_share`) and the versioned metrics JSON; test with a fixture log and a hand-made events CSV
 
 ## 7. Benchmark experiments (benchmark-experiments)
 
@@ -61,3 +61,8 @@
 - [x] 8.2 Add an integration test (marked, skipped when the manifest is missing) that runs a `short` HELIOS vs HELIOS match end to end and checks the run folder, events CSV and metrics JSON
 - [x] 8.3 Run a demo A/B experiment (`default` vs `noise-off`, short matches, small N) and check the report contents
 - [x] 8.4 Write `harness/README.md` in simplified technical English: system dependencies, build, run, experiment, reproducibility status and its reason
+
+## 9. Final-review fixes
+
+- [ ] 9.1 Replace shots, tackles and pass completion with the `ball_retention` proxy (user decision after the final review; match-metrics spec updated)
+- [ ] 9.2 Apply the final-review fix wave (closed /proc file handle, fake-server coach race, Python 3.11.4 floor, README D5 pointer, stale manifest on failed build, finite timeouts, seed range and meaning, replay after extraction failure, build cancel message) and run one short HELIOS vs Cyrus match through `matchlab run`
