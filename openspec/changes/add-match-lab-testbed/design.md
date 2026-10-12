@@ -214,6 +214,22 @@ benchmark experiments.
   play, so the difference comes from player behaviour before kick-off, not
   from the coaches. Proposed `SKIP_PREFIXES`: `("(server_param", "(msg ")`
   only if the `identical` path is kept; the check still reports `differs`.
+- **Spike 2 result (Task 8b)**: DIFFERS after filtering, but later than
+  before. Patch `0003-seed-synch-wait-clients.patch` adds
+  `server::synch_wait_clients` (default 0 = upstream); the spike used 24.
+  The hold works: in both runs all 22 players and 2 coaches connect at
+  stoppage step 0, kick-off comes at step 300 (was 364 vs 366), missed
+  cycles 0/0, and each client's command sequence in the `.rcl` is identical
+  up to step 299. With `(server_param` and `(msg ` lines skipped, the `.rcg`
+  files still differ from the first `(show 1 ...` line: the players decide
+  differently at step 300, the first step after kick-off. Likely server-side
+  cause (from the code, not instrumented): the server draws from one shared
+  random generator in an order that depends on wall-clock timing.
+  `Player::turn` adds random noise when the command arrives, and every
+  receive poll shuffles the player list with the same generator. The
+  number of polls per step depends on timing, and so does the order in
+  which commands arrive. Different turn noise gives different body angles
+  before kick-off. Results: a `(team 600 ... 0 0)`, b `(team 600 ... 0 1)`.
 
 ### D6: TOML profiles and profile identity
 
