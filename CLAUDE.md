@@ -79,7 +79,7 @@ Do the steps in this order. The schema's apply instruction also lists verify, re
 8. **Archive.** Merge `main` into the change branch, so that archive merges the delta specs into the latest `openspec/specs/`. If the merge has conflicts in `openspec/specs/`, stop and show them to the user. Then run `/opsx:archive <change-name>`. It merges the delta specs into `openspec/specs/` and moves the folder to `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
 9. **Finish.** Use `superpowers:finishing-a-development-branch`. When it offers choices, choose to push the branch and create a PR, unless the user asks for a different choice. Open the PR last, so that it contains the complete archived change.
    - The skill keeps the worktree while the PR is open. Fix PR feedback in that worktree. If a fix adds a ruling or finding, add it to the archived `retrospective.md`.
-   - After the PR merges, remove the worktree: `git worktree remove .worktrees/<change-name>`.
+   - After the PR merges, remove the worktree: `git worktree remove .claude/worktrees/<change-name>`.
 
 ### 3. Resume a change
 
