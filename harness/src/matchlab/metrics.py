@@ -15,7 +15,7 @@ from .record import update_record
 
 EVENTS_COLUMNS = ["Type", "Side1", "Unum1", "Time1", "Mode1", "X1", "Y1",
                   "Side2", "Unum2", "Time2", "X2", "Y2", "Success"]
-METRICS_SCHEMA = 1
+METRICS_SCHEMA = 2
 SIDES = ("left", "right")
 POSSESSION_TYPES = frozenset({"Pass", "Dribble", "Shoot"})
 
@@ -29,19 +29,18 @@ def read_events(path: Path) -> list[dict[str, str]]:
 
 
 def compute_metrics(score: FinalScore, fouls: dict[str, int], events: list[dict[str, str]]) -> dict:
-    count = {name: Counter() for name in ("shots", "passes", "passes_ok", "interceptions", "tackles", "possession")}
+    count = {name: Counter() for name in ("passes", "passes_ok", "interceptions", "lost", "possession")}
     for event in events:
         kind, side1, side2 = event["Type"], event["Side1"], event["Side2"]
         if kind == "Pass" and side1 in SIDES:
             count["passes"][side1] += 1
             if event["Success"] == "true":
                 count["passes_ok"][side1] += 1
-        elif kind == "Shoot" and side1 in SIDES:
-            count["shots"][side1] += 1
-        elif kind == "Tackle" and side1 in SIDES:
-            count["tackles"][side1] += 1
-        elif kind == "Interception" and side2 in SIDES:
-            count["interceptions"][side2] += 1
+        elif kind == "Interception":
+            if side2 in SIDES:
+                count["interceptions"][side2] += 1  # the side that won the ball
+            if side1 in SIDES:
+                count["lost"][side1] += 1  # the side that lost it
         if kind in POSSESSION_TYPES and side1 in SIDES:
             count["possession"][side1] += 1
     goals = {"left": score.left, "right": score.right}
@@ -50,16 +49,16 @@ def compute_metrics(score: FinalScore, fouls: dict[str, int], events: list[dict[
     sides = {}
     for side in SIDES:
         other = "right" if side == "left" else "left"
-        passes = count["passes"][side]
+        kept = count["passes_ok"][side]
+        attempts = kept + count["lost"][side]
         sides[side] = {
             "team": names[side],
             "goals": goals[side],
             "goal_difference": goals[side] - goals[other],
-            "shots": count["shots"][side],
-            "passes": passes,
-            "pass_completion": count["passes_ok"][side] / passes if passes else None,
+            "passes": count["passes"][side],
             "interceptions": count["interceptions"][side],
-            "tackles": count["tackles"][side],
+            # A proxy: rcg2data records an intercepted pass as an Interception row, not as a failed Pass row.
+            "ball_retention": kept / attempts if attempts else None,
             "fouls": fouls.get(side, 0),
             "event_possession_share": (count["possession"][side] / total_possession
                                        if total_possession else None),

@@ -15,25 +15,42 @@ def test_metrics_from_known_log():
     m = compute_metrics(final_score(FIX / "mini.rcg"), foul_counts(FIX / "mini.rcg"),
                         read_events(FIX / "mini.event.csv"))
     left, right = m["sides"]["left"], m["sides"]["right"]
-    assert m["schema"] == 1
+    assert m["schema"] == 2
     assert (left["goals"], right["goals"]) == (2, 1)
     assert (left["goal_difference"], right["goal_difference"]) == (1, -1)
-    assert (left["passes"], left["pass_completion"]) == (2, 0.5)
-    assert (right["passes"], right["pass_completion"]) == (1, 1.0)
+    assert (left["passes"], right["passes"]) == (2, 1)
     assert (left["interceptions"], right["interceptions"]) == (0, 1)
-    assert (left["shots"], right["shots"]) == (0, 1)
-    assert (left["tackles"], right["tackles"]) == (1, 0)
+    assert left["ball_retention"] == pytest.approx(0.5)   # 1 successful pass, 1 ball lost to an interception
+    assert right["ball_retention"] == pytest.approx(1.0)  # 1 successful pass, no losses
     assert (left["fouls"], right["fouls"]) == (1, 1)
     assert left["event_possession_share"] == pytest.approx(0.4)
     assert left["event_possession_share"] + right["event_possession_share"] == pytest.approx(1.0)
     assert left["team"] == "HELIOS_L"
 
 
-def test_no_passes_gives_null(tmp_path):
+def test_unsupported_metrics_are_absent():
+    m = compute_metrics(final_score(FIX / "mini.rcg"), foul_counts(FIX / "mini.rcg"),
+                        read_events(FIX / "mini.event.csv"))
+    for side in m["sides"].values():
+        assert not {"shots", "tackles", "pass_completion"} & set(side)
+
+
+def _row(kind, side1, side2, success="true"):
+    return {"Type": kind, "Side1": side1, "Unum1": "1", "Time1": "1", "Mode1": "play_on", "X1": "0", "Y1": "0",
+            "Side2": side2, "Unum2": "2", "Time2": "2", "X2": "1", "Y2": "1", "Success": success}
+
+
+def test_ball_retention_from_passes_and_losses():
+    events = [_row("Pass", "left", "left")] * 3 + [_row("Interception", "left", "right")]
+    m = compute_metrics(final_score(FIX / "mini.rcg"), {"left": 0, "right": 0}, events)
+    assert m["sides"]["left"]["ball_retention"] == pytest.approx(0.75)
+
+
+def test_no_passes_and_no_losses_gives_null(tmp_path):
     csv = tmp_path / "e.csv"
     csv.write_text((FIX / "mini.event.csv").read_text().splitlines()[0] + "\n")
     m = compute_metrics(final_score(FIX / "mini.rcg"), {"left": 0, "right": 0}, read_events(csv))
-    assert m["sides"]["left"]["pass_completion"] is None
+    assert m["sides"]["left"]["ball_retention"] is None
     assert m["sides"]["left"]["event_possession_share"] is None
 
 

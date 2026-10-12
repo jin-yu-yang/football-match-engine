@@ -24,7 +24,7 @@ def test_short_match_end_to_end(manifest, tmp_path):
     assert result.status == "ok", (result.run_dir / "run.json").read_text()
     for name in ("profile.json", "run.json", "match.rcg.gz", "match.rcl.gz", "events.csv", "metrics.json"):
         assert (result.run_dir / name).is_file(), name
-    assert result.metrics["schema"] == 1
+    assert result.metrics["schema"] == 2
     assert result.metrics["sides"]["left"]["team"] == "HELIOS_L"
 
 

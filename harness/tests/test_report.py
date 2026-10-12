@@ -6,9 +6,9 @@ from matchlab.runner import MatchResult
 
 
 def metrics(gl, gr):
-    side = {"team": "T", "shots": 3, "passes": 10, "pass_completion": 0.8, "interceptions": 2, "tackles": 1,
+    side = {"team": "T", "passes": 10, "ball_retention": 0.8, "interceptions": 2,
             "fouls": 0, "event_possession_share": 0.5}
-    return {"schema": 1, "sides": {"left": {**side, "goals": gl, "goal_difference": gl - gr},
+    return {"schema": 2, "sides": {"left": {**side, "goals": gl, "goal_difference": gl - gr},
                                    "right": {**side, "goals": gr, "goal_difference": gr - gl}}}
 
 

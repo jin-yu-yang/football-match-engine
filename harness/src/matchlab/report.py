@@ -12,8 +12,7 @@ from .runner import MatchResult
 from .stats import BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED, bootstrap_mean_ci, mean, wilson_interval
 
 REPORT_SCHEMA = 1
-OTHER_METRICS = ("shots", "passes", "pass_completion", "interceptions", "tackles", "fouls",
-                 "event_possession_share")
+OTHER_METRICS = ("passes", "ball_retention", "interceptions", "fouls", "event_possession_share")
 
 
 def focus_view(result: MatchResult) -> dict | None:
