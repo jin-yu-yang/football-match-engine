@@ -74,7 +74,11 @@ The harness SHALL start the right team only after the server log shows all 11 le
 - **AND** the error names the team and says 9 of 11 players connected
 
 ### Requirement: No kick-off before all players connect
-The harness SHALL set the server's `connect_wait` and `kick_off_wait` for every match, so that the server does not kick off before all 22 players are connected. Profiles MUST NOT set these two parameters.
+The harness SHALL set the server's `connect_wait`, `kick_off_wait` and `synch_wait_clients` for every match, so that the server does not step or kick off before all 22 players and every enabled coach are connected. `synch_wait_clients` MUST be 22 plus the number of teams whose coach is enabled. Profiles MUST NOT set these three parameters.
+
+#### Scenario: Server waits for every client
+- **WHEN** a match starts with both coaches enabled
+- **THEN** the server receives `server::synch_wait_clients=24`
 
 #### Scenario: Profile cannot change the kick-off guard
 - **WHEN** a profile sets `server.connect_wait`

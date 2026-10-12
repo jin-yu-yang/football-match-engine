@@ -230,6 +230,30 @@ benchmark experiments.
   number of polls per step depends on timing, and so does the order in
   which commands arrive. Different turn noise gives different body angles
   before kick-off. Results: a `(team 600 ... 0 0)`, b `(team 600 ... 0 1)`.
+- **Spike 3 (controller check, no noise)**: spike 2 again with every noise
+  parameter at 0 (`NOISE_PARAMS` and `player::kick_rand_delta_factor`).
+  Still DIFFERS after filtering: first difference at `(show 5 ...)`, one
+  right-team player's body angle (67 vs -3) with the same position,
+  velocity and stamina. So the remaining nondeterminism is not only server
+  noise: the order and timing of client commands also matter.
+- **Decision (user, 2026-10-12): fallback B.** The user approved one bounded
+  patch attempt with the rule "identical → exact-replay path; still
+  different → fallback B". Spikes 2 and 3 still differ, so reproducibility
+  in the testbed is statistical (same profile and seed → same
+  distribution). The check and every experiment report `differs` with the
+  first differing line and cycle. Exact replay is left to our own engine.
+- **Decision (controller, recorded as a ruling)**: keep the
+  `synch_wait_clients` hold patch. It makes everything before kick-off
+  deterministic (all clients connect at step 0, kick-off at step 300) and
+  removes the coach-timing race. The harness sets
+  `server::synch_wait_clients` = 22 + the number of teams with
+  `coach = true` (a reserved value). The hold has no timeout of its own;
+  the harness connect timeout (60 s per team) and process-group kill bound
+  it. The parameter has an effect only in synch mode.
+- **Skipped line prefixes** (`SKIP_PREFIXES`): `(server_param` (per-run log
+  folder paths) and `(msg ` (result line with a time stamp). They hold no
+  play data; skipping them makes the reported first difference point at
+  the real divergence. Each skipped prefix is listed in the result.
 
 ### D6: TOML profiles and profile identity
 
@@ -241,7 +265,8 @@ benchmark experiments.
     the `noise-off` preset and users can find them. Quantize steps are not
     noise parameters: the server divides by them.
   - Parameters that the harness controls (ports, synch and auto mode,
-    `connect_wait`, `kick_off_wait`, seed, log names and folders,
+    `connect_wait`, `kick_off_wait`, `synch_wait_clients`, seed, log names
+    and folders,
     `game_log_version` (fixed at 6, the ULG6 text format that the parsers
     read), match length) are reserved. A profile that sets one is rejected.
   - rcssserver itself rejects unknown parameter names: it prints an error
@@ -427,7 +452,7 @@ in `~` stay untouched; the harness never uses them.
 
 | Question | Owner | What it can affect |
 |---|---|---|
-| Do synch mode and seeds give byte-identical `.rcg` files for HELIOS vs HELIOS? | Spike done: DIFFERS, class (b), first cycle 1, 0 missed cycles, coaches on and off alike (see D5); user decides identical path or fallback B | D5 status `identical` or the fallback |
+| Do synch mode and seeds give byte-identical `.rcg` files for HELIOS vs HELIOS? | Spike done: DIFFERS, class (b), first cycle 1, 0 missed cycles, coaches on and off alike (see D5). Spike 2 (hold patch) and spike 3 (no noise) still differ. Decided by user on 2026-10-12: fallback B (statistical reproducibility) after one bounded patch attempt | D5 status `identical` or the fallback |
 | Is Cyrus seeding worth extra patches if its patch does not apply cleanly? | Patch written in Task 4: the same patch as for librcsc applies to the pinned Cyrus librcsc fork. Resolved in Task 7: the built Cyrus fork gives equal first draws with `RCSC_RANDOM_SEED=7` (same value as the HELIOS librcsc) and differing draws without it, so no extra patches are needed | Whether Cyrus matches replay exactly |
 | Does the local rcssserver tarball differ from tag `rcssserver-19.0.0`? | Resolved in Task 4: no source differences; the release tarball (SHA-256 `08abeef0...2aea`) matches the local build tree except for generated files (`player_command_parser.*`, `player_command_tok.cpp`, build outputs), so rcssserver needs no build-fix patch | Whether rcssserver needs a build-fix patch |
-| Do coaches connect before kick-off in every run? | Spike done: coaches connected in every run (2 connects per run); the coach-off run differs too, so coaches are not the cause; no change of the coach default is indicated (user decision Q12) | Coach default stays on, or changes to off (user decision Q12) |
+| Do coaches connect before kick-off in every run? | Spike done: coaches connected in every run (2 connects per run); the coach-off run differs too, so coaches are not the cause; no change of the coach default is indicated (user decision Q12). Decided by user on 2026-10-12: coach default stays on | Coach default stays on, or changes to off (user decision Q12) |

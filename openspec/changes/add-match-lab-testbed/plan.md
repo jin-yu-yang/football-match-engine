@@ -15,7 +15,7 @@
 - Python requirement in `pyproject.toml`: `requires-python = ">=3.11"`. Runtime dependencies: none. Development dependency: `pytest>=8`. Build backend: `setuptools>=77` (older versions reject the SPDX `license` string).
 - Commands that can run longer than 10 minutes (the full testbed build, the spike, the demo experiment) run with the Bash tool's `run_in_background` option and write to a log file. Wait for the completion notice, then read the log.
 - Foreground commands that run real matches (the integration tests, the full suite after Task 6) pass the Bash tool's `timeout` parameter as `600000` (10 minutes); the default is 2 minutes.
-- Server values that the harness sets for every match (reserved; profiles cannot set them): ports, `synch_mode=true`, `auto_mode=true`, `random_seed`, `connect_wait=100000000`, `kick_off_wait=300`, logging on, fixed log names `match.rcg` / `match.rcl`, no server-side log compression, `game_log_version=6` (the ULG6 text format the parsers read), `nr_normal_halfs` and `half_time` (from `[match]`).
+- Server values that the harness sets for every match (reserved; profiles cannot set them): ports, `synch_mode=true`, `auto_mode=true`, `random_seed`, `connect_wait=100000000`, `kick_off_wait=300`, `synch_wait_clients` = 22 + the number of teams with `coach = true` (the rcssserver hold patch 0003: the server does not step before that many clients are connected), logging on, fixed log names `match.rcg` / `match.rcl`, no server-side log compression, `game_log_version=6` (the ULG6 text format the parsers read), `nr_normal_halfs` and `half_time` (from `[match]`).
 - Team start order: start the left team, wait until `server.log` shows its 11 players (and its coach when `coach = true`), then the same for the right team. Connect timeout: 60 s per team. Coaches are on by default.
 - Run statuses: `running`, `ok`, `error`, `timeout`, `cancelled`, `extraction-failed`. Every run record has `missed_cycles` (count of "Someone missed a cycle" lines).
 - Package license field: `license = "GPL-3.0-or-later"`. Root `LICENSE` = the GPLv3 text, SHA-256 `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986`.
@@ -1761,7 +1761,7 @@ PLAYER_NOISE_PARAMS: tuple[str, ...] = ("kick_rand_delta_factor",)
 # The harness sets these itself for every match.
 RESERVED_SERVER = frozenset({
     "port", "coach_port", "olcoach_port", "synch_mode", "auto_mode", "random_seed",
-    "connect_wait", "kick_off_wait",
+    "connect_wait", "kick_off_wait", "synch_wait_clients",
     "game_logging", "text_logging", "game_log_dir", "text_log_dir",
     "game_log_fixed", "text_log_fixed", "game_log_fixed_name", "text_log_fixed_name",
     "game_log_compression", "text_log_compression", "game_log_version", "nr_normal_halfs", "half_time",
@@ -2314,6 +2314,9 @@ def test_server_args_contain_profile_and_fixed_values(tmp_path):
     assert "server::half_time=30" in args and "server::nr_normal_halfs=2" in args
     assert "server::random_seed=99" in args and "server::synch_mode=true" in args
     assert "server::connect_wait=100000000" in args and "server::kick_off_wait=300" in args
+    assert "server::synch_wait_clients=24" in args  # 22 players + 2 coaches
+    no_coach = load_profile("short", overrides={"teams": {"right": {"coach": False}}})
+    assert "server::synch_wait_clients=23" in server_args(no_coach, port_set(2), 99, tmp_path)
     assert "server::game_log_version=6" in args
 
     assert "server::port=16020" in args and "server::olcoach_port=16022" in args
@@ -2532,6 +2535,8 @@ def server_args(profile: Profile, ports: PortSet, match_seed: int, log_dir: Path
         "port": ports.player, "coach_port": ports.coach, "olcoach_port": ports.olcoach,
         "synch_mode": True, "auto_mode": True, "random_seed": match_seed,
         "connect_wait": CONNECT_WAIT, "kick_off_wait": KICK_OFF_WAIT,
+        # rcssserver patch 0003: no step before all players and enabled coaches are connected
+        "synch_wait_clients": 2 * PLAYERS_PER_TEAM + sum(1 for side in SIDES if profile.team(side)["coach"]),
         "game_logging": True, "text_logging": True,
         "game_log_dir": log_dir, "text_log_dir": log_dir,
         "game_log_fixed": True, "text_log_fixed": True,
@@ -2968,7 +2973,7 @@ def compress_logs(run_dir: Path) -> None:
 
 - [ ] **Step 4: Write `harness/src/matchlab/repro.py`**
 
-Set `SKIP_PREFIXES` to the value the user approved in Task 8 (`()` when the spike was IDENTICAL or the user chose fallback B).
+`SKIP_PREFIXES` holds the two prefixes recorded in design.md D5 after Task 8: `(server_param` (per-run log folder paths) and `(msg ` (result line with a time stamp). They hold no play data; skipping them makes the reported first difference point at the real divergence.
 
 ```python
 """Replay a match and compare the game logs byte for byte."""
@@ -2987,7 +2992,7 @@ from .rcg import compress_logs, game_log, open_binary, show_cycle
 from .record import update_record
 
 # Line prefixes that hold no match data (decided in Task 8). Each skipped prefix is reported.
-SKIP_PREFIXES: tuple[bytes, ...] = ()
+SKIP_PREFIXES: tuple[bytes, ...] = (b"(server_param", b"(msg ")
 
 
 @dataclass(frozen=True)
@@ -4309,7 +4314,7 @@ git commit -m "feat(harness): add run, experiment and check-repro commands" -m "
 
 - [ ] **Step 1: Write the integration tests `harness/tests/test_integration.py`**
 
-If Task 8 decided the `identical` path, keep the line marked `# identical path`. If it decided fallback B, delete that line.
+Task 8 decided fallback B (statistical reproducibility), so the test accepts `identical` or `differs` and checks that a difference names its line. The line marked `# identical path` is NOT part of the file.
 
 ```python
 """End-to-end tests on the real testbed. Skipped when .testbed/manifest.json is missing."""
@@ -4348,7 +4353,6 @@ def test_short_match_reproducibility(manifest, tmp_path):
     assert result.status in ("identical", "differs")
     if result.status == "differs":
         assert result.first_difference["line"] >= 1
-    assert result.status == "identical"  # identical path
 ```
 
 - [ ] **Step 2: Run the integration tests on the real testbed**
@@ -4460,8 +4464,15 @@ have connected. A client that answers too slowly makes the server skip it for
 one cycle ("Someone missed a cycle"); such a match is not reproducible.
 `run.json` and the report count these missed cycles.
 
-Status: <write the Task 8 result here: "identical" or "differs", the reason,
-the coach default, and any skipped line prefixes>.
+Status: **differs** (statistical reproducibility). The same profile and seed
+give the same distribution of results, not the same game log. The patched
+server makes everything before kick-off identical: every client connects at
+step 0 and kick-off is at step 300. After kick-off, the order and timing of
+client commands and the server's shared random generator still vary, even
+with all noise set to 0. Coaches stay on by default; they are not the cause.
+The check skips two line prefixes that hold no play data: `(server_param`
+(the run's log folder paths) and `(msg ` (a result line with a time stamp).
+Exact replay is planned for our own engine.
 
 ## Python API
 
