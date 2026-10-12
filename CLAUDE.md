@@ -78,6 +78,8 @@ Do the steps in this order. The schema's apply instruction also lists verify, re
 7. **Retrospective.** Get the rules with `openspec instructions retrospective --change "<change-name>" --json`. Write `retrospective.md`. Include the summary of the ledger findings (section 7, last bullet).
 8. **Archive.** Merge `main` into the change branch, so that archive merges the delta specs into the latest `openspec/specs/`. If the merge has conflicts in `openspec/specs/`, stop and show them to the user. Then run `/opsx:archive <change-name>`. It merges the delta specs into `openspec/specs/` and moves the folder to `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
 9. **Finish.** Use `superpowers:finishing-a-development-branch`. When it offers choices, choose to push the branch and create a PR, unless the user asks for a different choice. Open the PR last, so that it contains the complete archived change.
+   - The skill keeps the worktree while the PR is open. Fix PR feedback in that worktree. If a fix adds a ruling or finding, add it to the archived `retrospective.md`.
+   - After the PR merges, remove the worktree: `git worktree remove .worktrees/<change-name>`.
 
 ### 3. Resume a change
 
@@ -134,6 +136,6 @@ Working notes from apply are scratch:
 - Subagent-driven development keeps its ledger (`progress.md`), task briefs, reports and review packages in `.superpowers/sdd/plan/` inside the change's worktree. The folder is named after `plan.md`. `.superpowers/` must be in `.gitignore`.
 - Never commit these files. Never copy them into the change folder or `docs/superpowers/`.
 - Every change's plan file is named `plan.md`, so all changes share the folder name `plan`. Run apply for one change per worktree. If the ledger's first line names another change's `plan.md`, stop and ask the user.
-- Step 9 removes the worktree, and the ledger with it. Before that, in step 7, write a summary in `retrospective.md` of every ruling, parked finding and deferred minor finding that the ledger records. Do not copy the ledger files.
+- The ledger is deleted when the worktree is removed (step 9). In step 7, write a summary in `retrospective.md` of every ruling, parked finding and deferred minor finding that the ledger records. Do not copy the ledger files.
 
 ## Project rules
