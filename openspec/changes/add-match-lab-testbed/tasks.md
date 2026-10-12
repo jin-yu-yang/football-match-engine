@@ -37,7 +37,7 @@
 - [x] 5.2 Implement port-slot allocation and a free-port check before each match
 - [x] 5.3 Implement single-match execution: start the server with the reserved `connect_wait` and `kick_off_wait`; start the left team, wait until its 11 players (and coach) appear in the server log, then do the same for the right team; wait for the server to exit; stop the process group on finish, error, timeout or cancel; count missed cycles
 - [x] 5.4 Implement the run folder and run record (resolved profile, hash, seeds, pins, status, timings, reproducibility status) and log compression
-- [ ] 5.5 Implement `run_matches` with a thread pool and port-slot queue (default 1 worker) and a cancel flag that Ctrl-C sets
+- [x] 5.5 Implement `run_matches` with a thread pool and port-slot queue (default 1 worker) and a cancel flag that Ctrl-C sets
 - [x] 5.6 Implement the reproducibility check (run twice, byte compare, report first differing cycle and line, list skipped fields)
 
 ## 6. Match metrics (match-metrics)
