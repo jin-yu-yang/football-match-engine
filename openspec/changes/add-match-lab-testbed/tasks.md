@@ -17,9 +17,9 @@
 
 ## 3. Seed patches and reproducibility spike
 
-- [ ] 3.1 Add the rcssserver seed patch that registers `server::random_seed` again; confirm that the server prints the given seed
-- [ ] 3.2 Add the librcsc seed patch (`RCSC_RANDOM_SEED` for `random.h`, `ann/rbf.cpp`, `ann/ngnet.cpp`) and the same patch for the Cyrus librcsc fork if it applies; record the Cyrus outcome
-- [ ] 3.3 Confirm that without a seed, the server and clients still seed from the clock or random device
+- [x] 3.1 Add the rcssserver seed patch that registers `server::random_seed` again; confirm that the server prints the given seed
+- [x] 3.2 Add the librcsc seed patch (`RCSC_RANDOM_SEED` for `random.h`, `ann/rbf.cpp`, `ann/ngnet.cpp`) and the same patch for the Cyrus librcsc fork if it applies; record the Cyrus outcome
+- [x] 3.3 Confirm that without a seed, the server and clients still seed from the clock or random device
 - [ ] 3.4 Spike: run HELIOS vs HELIOS twice with a short match, synch mode, fixed log name and the same seeds; compare the `.rcg` files byte for byte and record the result, the first difference if any, and any non-match fields to skip
 - [ ] 3.5 Decide with the user: `identical` path, or fallback B (statistical reproducibility); record the decision in `design.md` Open Questions
 
