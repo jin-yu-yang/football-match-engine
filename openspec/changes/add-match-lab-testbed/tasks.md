@@ -64,5 +64,5 @@
 
 ## 9. Final-review fixes
 
-- [ ] 9.1 Replace shots, tackles and pass completion with the `ball_retention` proxy (user decision after the final review; match-metrics spec updated)
-- [ ] 9.2 Apply the final-review fix wave (closed /proc file handle, fake-server coach race, Python 3.11.4 floor, README D5 pointer, stale manifest on failed build, finite timeouts, seed range and meaning, replay after extraction failure, build cancel message) and run one short HELIOS vs Cyrus match through `matchlab run`
+- [x] 9.1 Replace shots, tackles and pass completion with the `ball_retention` proxy (user decision after the final review; match-metrics spec updated)
+- [x] 9.2 Apply the final-review fix wave (closed /proc file handle, fake-server coach race, Python 3.11.4 floor, README D5 pointer, stale manifest on failed build, finite timeouts, seed range and meaning, replay after extraction failure, build cancel message) and run one short HELIOS vs Cyrus match through `matchlab run`
