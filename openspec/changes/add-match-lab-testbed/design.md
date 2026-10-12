@@ -399,6 +399,6 @@ in `~` stay untouched; the harness never uses them.
 | Question | Owner | What it can affect |
 |---|---|---|
 | Do synch mode and seeds give byte-identical `.rcg` files for HELIOS vs HELIOS? | Spike task in this change | D5 status `identical` or the fallback |
-| Is Cyrus seeding worth extra patches if its patch does not apply cleanly? | User, after the spike | Whether Cyrus matches replay exactly |
-| Does the local rcssserver tarball differ from tag `rcssserver-19.0.0`? | Build task in this change | Whether rcssserver needs a build-fix patch |
+| Is Cyrus seeding worth extra patches if its patch does not apply cleanly? | Patch written in Task 4: the same patch as for librcsc applies to the pinned Cyrus librcsc fork; checked in Task 7 | Whether Cyrus matches replay exactly |
+| Does the local rcssserver tarball differ from tag `rcssserver-19.0.0`? | Resolved in Task 4: no source differences; the release tarball (SHA-256 `08abeef0...2aea`) matches the local build tree except for generated files (`player_command_parser.*`, `player_command_tok.cpp`, build outputs), so rcssserver needs no build-fix patch | Whether rcssserver needs a build-fix patch |
 | Do coaches connect before kick-off in every run? | Spike task in this change | Coach default stays on, or changes to off (user decision Q12) |

@@ -1,0 +1,100 @@
+Group: seed
+Reason: Seed RandomEngine and the ANN engines from RCSC_RANDOM_SEED when it is set; keep the upstream seeds otherwise.
+
+diff --git a/rcsc/ann/ngnet.cpp b/rcsc/ann/ngnet.cpp
+index 7eca8d2..18c6c36 100644
+--- a/rcsc/ann/ngnet.cpp
++++ b/rcsc/ann/ngnet.cpp
+@@ -44,6 +44,8 @@
+ #include <sstream>
+ #include <ctime>
+ 
++#include <rcsc/random.h>
++
+ namespace rcsc {
+ 
+ /*-------------------------------------------------------------------*/
+@@ -68,7 +70,7 @@ NGNet::Unit::randomize( const double & min_weight,
+                         const double & max_weight,
+                         const double & initial_sigma )
+ {
+-    static std::mt19937 s_engine( std::time( 0 ) );
++    static std::mt19937 s_engine( rcsc::seed_from_env_or( static_cast< std::uint32_t >( std::time( 0 ) ) ) );
+ 
+     double min_w = min_weight;
+     double max_w = max_weight;
+diff --git a/rcsc/ann/rbf.cpp b/rcsc/ann/rbf.cpp
+index 52eaa44..c702919 100644
+--- a/rcsc/ann/rbf.cpp
++++ b/rcsc/ann/rbf.cpp
+@@ -42,6 +42,8 @@
+ #include <sstream>
+ #include <ctime>
+ 
++#include <rcsc/random.h>
++
+ namespace rcsc {
+ 
+ /*-------------------------------------------------------------------*/
+@@ -71,7 +73,7 @@ RBFNetwork::Unit::randomize( const double & min_weight,
+     //static std::mt19937 s_engine( std::random_device()() );
+     // static std::random_device rng;
+     // static std::mt19937 s_engine( rng() );
+-    static std::mt19937 s_engine( std::time( 0 ) );
++    static std::mt19937 s_engine( rcsc::seed_from_env_or( static_cast< std::uint32_t >( std::time( 0 ) ) ) );
+ 
+     double min_w = min_weight;
+     double max_w = max_weight;
+diff --git a/rcsc/random.h b/rcsc/random.h
+index b622463..57a2a91 100644
+--- a/rcsc/random.h
++++ b/rcsc/random.h
+@@ -33,12 +33,39 @@
+ #define RCSC_UTIL_RANDOM_H
+ 
+ #include <random>
++#include <cstdint>
++#include <cstdlib>
+ #include <algorithm> // min, max
+ #include <iostream>
+ #include <ctime>
+ 
+ namespace rcsc {
+ 
++/*!
++  \brief return the seed in the environment variable RCSC_RANDOM_SEED, or the fallback.
++  \param fallback the seed to use when the variable is not set or not a decimal number.
++  \return seed value
++
++  matchlab: a fixed seed makes testbed matches reproducible. Without the
++  variable, the behaviour is the upstream behaviour.
++*/
++inline
++std::uint32_t
++seed_from_env_or( const std::uint32_t fallback )
++{
++    const char * env = std::getenv( "RCSC_RANDOM_SEED" );
++    if ( env && *env )
++    {
++        char * end = nullptr;
++        const unsigned long value = std::strtoul( env, &end, 10 );
++        if ( end && *end == '\0' )
++        {
++            return static_cast< std::uint32_t >( value );
++        }
++    }
++    return fallback;
++}
++
+ /*-------------------------------------------------------------------*/
+ /*!
+   \class RandomEngine
+@@ -59,7 +86,7 @@ private:
+       The random engine object is seeded by current time.
+     */
+     RandomEngine()
+-        : M_engine( std::random_device()() )
++        : M_engine( seed_from_env_or( std::random_device()() ) )
+       { }
+ 
+     //! not used for singleton.

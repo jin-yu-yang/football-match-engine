@@ -1,0 +1,26 @@
+Group: build-fix
+Reason: GCC 15 rejects the CRTP calls in the bundled simdjson; call through the derived formatter.
+
+diff --git a/rcsc/rcg/simdjson/simdjson.h b/rcsc/rcg/simdjson/simdjson.h
+index 0166d44..5f87996 100644
+--- a/rcsc/rcg/simdjson/simdjson.h
++++ b/rcsc/rcg/simdjson/simdjson.h
+@@ -6260,15 +6260,15 @@ public:
+   simdjson_inline void one_char(char c);
+ 
+   simdjson_inline void call_print_newline() {
+-      this->print_newline();
++      static_cast<formatter*>(this)->print_newline();
+   }
+ 
+   simdjson_inline void call_print_indents(size_t depth) {
+-      this->print_indents(depth);
++      static_cast<formatter*>(this)->print_indents(depth);
+   }
+ 
+   simdjson_inline void call_print_space() {
+-      this->print_space();
++      static_cast<formatter*>(this)->print_space();
+   }
+ 
+ protected:

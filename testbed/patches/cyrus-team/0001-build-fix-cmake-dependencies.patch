@@ -1,0 +1,94 @@
+Group: build-fix
+Reason: Boost.System fallback; search the given librcsc with HINTS before /usr/local; find CppDNN and Eigen headers in CYRUS_DEPS_DIR.
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6c1ba6d..5817f2a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -26,8 +26,10 @@ if(LIB_DIR STREQUAL "")
+ endif()
+ set(LIBRCSC_INSTALL_DIR "${LIB_DIR}" CACHE PATH "The path where librcsc is installed.")
+ 
++# HINTS (not PATHS) so the Cyrus librcsc wins over any librcsc that may be
++# installed in a default system prefix such as /usr/local.
+ find_library(LIBRCSC_LIB NAMES rcsc
+-  PATHS ${LIBRCSC_INSTALL_DIR}
++  HINTS ${LIBRCSC_INSTALL_DIR}
+   PATH_SUFFIXES lib
+   )
+ if(NOT LIBRCSC_LIB)
+@@ -37,7 +39,7 @@ get_filename_component(LIBRCSC_LIBDIR ${LIBRCSC_LIB} DIRECTORY)
+ 
+ find_path(LIBRCSC_INCLUDE_DIR
+   NAME rcsc/types.h
+-  PATHS ${LIBRCSC_INSTALL_DIR}
++  HINTS ${LIBRCSC_INSTALL_DIR}
+   PATH_SUFFIXES include
+   )
+ if(NOT LIBRCSC_INCLUDE_DIR)
+@@ -52,10 +54,24 @@ mark_as_advanced(
+   )
+ 
+ # boost
+-find_package(Boost 1.36.0 COMPONENTS system REQUIRED)
++# Boost.System is header-only since 1.69 and the compiled component was removed
++# in newer Boost releases, so fall back to the header-only package.
++if(POLICY CMP0167)
++  cmake_policy(SET CMP0167 NEW)
++endif()
++find_package(Boost 1.36.0 QUIET COMPONENTS system)
++if(NOT Boost_FOUND)
++  find_package(Boost 1.36.0 REQUIRED)
++endif()
+ if(NOT Boost_FOUND)
+   message(FATAL_ERROR "Boost not found!")
+ endif()
++if(NOT TARGET Boost::system)
++  add_library(Boost::system INTERFACE IMPORTED)
++  if(TARGET Boost::headers)
++    set_target_properties(Boost::system PROPERTIES INTERFACE_LINK_LIBRARIES Boost::headers)
++  endif()
++endif()
+ 
+ # zlib
+ find_package(ZLIB)
+@@ -83,6 +99,39 @@ include_directories(
+     ${RAPIDJSON_INCLUDE_DIR}
+ )
+ 
++# CppDNN (header-only, https://github.com/Cyrus2D/CppDNN) and Eigen3, which
++# CppDNN includes as <eigen3/Eigen/Dense>. A user-local prefix is searched
++# first so neither has to be installed into a system directory.
++if(NOT DEFINED CYRUS_DEPS_DIR)
++  set(CYRUS_DEPS_DIR "$ENV{HOME}/local/cyrusdeps;$ENV{HOME}/.local/cyrusdeps")
++endif()
++
++find_path(CPPDNN_INCLUDE_DIR
++  NAME CppDNN/DeepNueralNetwork.h
++  HINTS ${CYRUS_DEPS_DIR}
++  PATH_SUFFIXES include
++  )
++if(NOT CPPDNN_INCLUDE_DIR)
++  message(FATAL_ERROR "CppDNN headers not found! Install https://github.com/Cyrus2D/CppDNN")
++endif()
++
++find_path(EIGEN3_INCLUDE_DIR
++  NAME eigen3/Eigen/Dense
++  HINTS ${CYRUS_DEPS_DIR}
++  PATH_SUFFIXES include
++  )
++if(NOT EIGEN3_INCLUDE_DIR)
++  message(FATAL_ERROR "Eigen3 headers not found! Install libeigen3-dev")
++endif()
++
++message(STATUS "  CPPDNN_INCLUDE_DIR=${CPPDNN_INCLUDE_DIR}")
++message(STATUS "  EIGEN3_INCLUDE_DIR=${EIGEN3_INCLUDE_DIR}")
++
++include_directories(
++    ${CPPDNN_INCLUDE_DIR}
++    ${EIGEN3_INCLUDE_DIR}
++)
++
+ 
+ # sub directories
+ add_subdirectory(src)
