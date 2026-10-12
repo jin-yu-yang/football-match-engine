@@ -1,0 +1,19 @@
+Group: build-fix
+Reason: Boost 1.89 and later have no compiled Boost.System library; accept the header-only Boost.System that the configure check already found (patches the generated configure, so no autotools rerun).
+
+diff --git a/configure b/configure
+index 5b83931..cc2303e 100755
+--- a/configure
++++ b/configure
+@@ -20545,7 +20545,10 @@ fi
+ 
+             fi
+             if test "x$ax_lib" = "x"; then
+-                as_fn_error $? "Could not find a version of the Boost::System library!" "$LINENO" 5
++                # Boost.System is header-only in Boost 1.69 and later, and Boost 1.89
++                # no longer ships the compiled library. The header check above passed.
++                BOOST_SYSTEM_LIB=""
++                link_system="yes"
+             fi
+ 			if test "x$link_system" = "xno"; then
+ 				as_fn_error $? "Could not link against $ax_lib !" "$LINENO" 5
