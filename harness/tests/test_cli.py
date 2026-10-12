@@ -1,7 +1,9 @@
 from pathlib import Path
 
+import pytest
+
 import matchlab.cli as cli
-from matchlab.repro import ReproResult
+from matchlab.repro import ReproError, ReproResult
 
 
 def test_experiment_calls_the_api(monkeypatch, tmp_path, capsys):
@@ -42,3 +44,36 @@ def test_check_repro_exit_codes(monkeypatch, tmp_path):
 def test_errors_exit_2(capsys):
     assert cli.main(["run", "--profile", "no-such-profile", "--seed", "1", "--out", "x"]) == 2
     assert capsys.readouterr().err.startswith("error: ")
+
+
+def test_unfinished_repro_run_exits_2(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(cli, "load_manifest", lambda: type("M", (), {"teams": {"helios": None}})())
+
+    def unfinished(*a, **k):
+        raise ReproError("run a did not finish (error: boom); see x")
+
+    monkeypatch.setattr(cli, "check_reproducibility", unfinished)
+    assert cli.main(["check-repro", "--profile", "short", "--seed", "1", "--out", str(tmp_path / "r")]) == 2
+    assert capsys.readouterr().err.startswith("error: ")
+
+
+def test_zero_workers_is_a_usage_error(tmp_path, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["run", "--profile", "short", "--seed", "1", "--out", str(tmp_path / "x"), "--workers", "0"])
+    assert exc.value.code == 2
+    assert "must be 1 or more" in capsys.readouterr().err
+
+
+def test_zero_matches_is_a_usage_error(tmp_path, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["run", "--profile", "short", "--seed", "1", "--out", str(tmp_path / "x"), "--matches", "0"])
+    assert exc.value.code == 2
+    assert "must be 1 or more" in capsys.readouterr().err
+
+
+def test_non_positive_timeout_is_a_usage_error(tmp_path, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["check-repro", "--profile", "short", "--seed", "1", "--out", str(tmp_path / "r"),
+                  "--timeout", "0"])
+    assert exc.value.code == 2
+    assert "must be greater than 0" in capsys.readouterr().err

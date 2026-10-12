@@ -10,14 +10,28 @@ from pathlib import Path
 from . import paths
 from .build import BuildContext, BuildError, build_all
 from .experiment import ExperimentError, run_experiment
-from .manifest import ManifestError, load_manifest
+from .manifest import Manifest, ManifestError, load_manifest
 from .patches import PatchError
 from .pins import COMPONENTS, PinError, load_pins
 from .ports import PortInUseError
-from .profile import ProfileError, load_profile
-from .repro import check_reproducibility
+from .profile import Profile, ProfileError, load_profile
+from .repro import ReproError, check_reproducibility
 from .runner import run_matches
 from .seeds import match_seeds
+
+
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be 1 or more")
+    return value
+
+
+def _positive_float(text: str) -> float:
+    value = float(text)
+    if not value > 0:  # also rejects nan
+        raise argparse.ArgumentTypeError("must be greater than 0")
+    return value
 
 
 def _cmd_build(args: argparse.Namespace) -> int:
@@ -29,7 +43,7 @@ def _cmd_build(args: argparse.Namespace) -> int:
     return 0
 
 
-def _profile_for_testbed(ref: str):
+def _profile_for_testbed(ref: str) -> tuple[Profile, Manifest]:
     load_profile(ref)  # report profile errors before touching the testbed
     manifest = load_manifest()
     return load_profile(ref, known_teams=manifest.teams.keys()), manifest
@@ -73,37 +87,37 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="matchlab", description="Build the RoboCup testbed and run experiments.")
     sub = parser.add_subparsers(dest="command", required=True)
     build = sub.add_parser("build", help="fetch, patch and build the pinned testbed into .testbed/")
-    build.add_argument("--jobs", type=int, default=2, help="parallel compile jobs (default 2; 3 GB RAM)")
+    build.add_argument("--jobs", type=_positive_int, default=2, help="parallel compile jobs (default 2; 3 GB RAM)")
     build.add_argument("--only", nargs="+", choices=COMPONENTS, help="rebuild only these components")
     build.set_defaults(handler=_cmd_build)
 
     run = sub.add_parser("run", help="run N matches for one profile")
     run.add_argument("--profile", required=True, help="preset name or path to a profile TOML file")
-    run.add_argument("--matches", type=int, default=1)
+    run.add_argument("--matches", type=_positive_int, default=1)
     run.add_argument("--seed", type=int, required=True, help="base seed; match seeds derive from it")
     run.add_argument("--out", type=Path, required=True, help="output folder for the run folders")
-    run.add_argument("--workers", type=int, default=1)
-    run.add_argument("--timeout", type=float, default=3600.0, help="seconds per match")
+    run.add_argument("--workers", type=_positive_int, default=1)
+    run.add_argument("--timeout", type=_positive_float, default=3600.0, help="seconds per match")
     run.add_argument("--swap-sides", action="store_true", help="also play each seed with the teams exchanged")
     run.set_defaults(handler=_cmd_run)
 
     exp = sub.add_parser("experiment", help="run a paired A/B experiment from a TOML file")
     exp.add_argument("file", type=Path)
     exp.add_argument("--out", type=Path, default=None, help="output folder (default runs/<name>)")
-    exp.add_argument("--workers", type=int, default=1)
+    exp.add_argument("--workers", type=_positive_int, default=1)
     exp.set_defaults(handler=_cmd_experiment)
 
     rep = sub.add_parser("check-repro", help="run one match twice and compare the game logs")
     rep.add_argument("--profile", required=True)
     rep.add_argument("--seed", type=int, required=True, help="the match seed")
     rep.add_argument("--out", type=Path, required=True)
-    rep.add_argument("--timeout", type=float, default=3600.0)
+    rep.add_argument("--timeout", type=_positive_float, default=3600.0)
     rep.set_defaults(handler=_cmd_check_repro)
     return parser
 
 
 ERRORS: tuple[type[Exception], ...] = (PinError, PatchError, BuildError, ManifestError, ProfileError,
-                                       ExperimentError, PortInUseError, FileExistsError)
+                                       ExperimentError, ReproError, PortInUseError, FileExistsError)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

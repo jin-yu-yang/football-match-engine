@@ -17,6 +17,10 @@ from .record import update_record
 SKIP_PREFIXES: tuple[bytes, ...] = (b"(server_param", b"(msg ")
 
 
+class ReproError(RuntimeError):
+    """A run of the reproducibility check did not finish."""
+
+
 @dataclass(frozen=True)
 class ReproResult:
     status: str
@@ -74,7 +78,7 @@ def replay_and_compare(profile: Profile, match_seed: int, original_run_dir: Path
     rec = run_single_match(profile, match_seed=match_seed, run_dir=replay_dir, manifest=manifest, slot=slot,
                            timeout_s=timeout_s, profile_hash=profile_hash)
     if rec.status != "ok":
-        raise RuntimeError(f"the replay did not finish ({rec.status}: {rec.error}); see {replay_dir}")
+        raise ReproError(f"the replay did not finish ({rec.status}: {rec.error}); see {replay_dir}")
     result = compare_rcg(game_log(original_run_dir), game_log(replay_dir))
     for run_dir in (original_run_dir, replay_dir):
         update_record(run_dir, reproducibility=result.status)
@@ -88,7 +92,7 @@ def check_reproducibility(profile: Profile, match_seed: int, out_dir: Path, mani
     first = run_single_match(profile, match_seed=match_seed, run_dir=out_dir / "a", manifest=manifest,
                              slot=slot, timeout_s=timeout_s)
     if first.status != "ok":
-        raise RuntimeError(f"run a did not finish ({first.status}: {first.error}); see {first.run_dir}")
+        raise ReproError(f"run a did not finish ({first.status}: {first.error}); see {first.run_dir}")
     result = replay_and_compare(profile, match_seed, out_dir / "a", out_dir / "b", manifest,
                                 slot=slot, timeout_s=timeout_s)
     (out_dir / "repro.json").write_text(json.dumps(
