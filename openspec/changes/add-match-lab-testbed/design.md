@@ -201,6 +201,19 @@ benchmark experiments.
   possible, the harness still runs. It records `differs` with the reason,
   and reproducibility becomes statistical (same profile, same distribution).
   The docs explain the reason.
+- **Spike result (Task 8)**: DIFFERS: class (b), first cycle 1, missed cycles
+  0/0 (coaches on) and 0/0 (coaches off, `-C`), coach-off result also
+  DIFFERS (first show line at cycle 1 again). Server seed was applied
+  (`Using given Simulator Random Seed: 737161366`) and all 22 players and
+  both coaches connected in every run. Header lines 3-23 (playmode, params,
+  player types) are identical; two non-match fields differ and could be
+  skipped: `(server_param` (holds the per-run `game_log_dir`/`text_log_dir`
+  paths) and the `(msg N 1 "(result <timestamp> ...` line. After normalizing
+  them the logs still diverge from the first `(show 1 ...` line: player
+  body/neck angles and command counters (the `(c ...` field) differ before any
+  play, so the difference comes from player behaviour before kick-off, not
+  from the coaches. Proposed `SKIP_PREFIXES`: `("(server_param", "(msg ")`
+  only if the `identical` path is kept; the check still reports `differs`.
 
 ### D6: TOML profiles and profile identity
 
@@ -398,7 +411,7 @@ in `~` stay untouched; the harness never uses them.
 
 | Question | Owner | What it can affect |
 |---|---|---|
-| Do synch mode and seeds give byte-identical `.rcg` files for HELIOS vs HELIOS? | Spike task in this change | D5 status `identical` or the fallback |
+| Do synch mode and seeds give byte-identical `.rcg` files for HELIOS vs HELIOS? | Spike done: DIFFERS, class (b), first cycle 1, 0 missed cycles, coaches on and off alike (see D5); user decides identical path or fallback B | D5 status `identical` or the fallback |
 | Is Cyrus seeding worth extra patches if its patch does not apply cleanly? | Patch written in Task 4: the same patch as for librcsc applies to the pinned Cyrus librcsc fork. Resolved in Task 7: the built Cyrus fork gives equal first draws with `RCSC_RANDOM_SEED=7` (same value as the HELIOS librcsc) and differing draws without it, so no extra patches are needed | Whether Cyrus matches replay exactly |
 | Does the local rcssserver tarball differ from tag `rcssserver-19.0.0`? | Resolved in Task 4: no source differences; the release tarball (SHA-256 `08abeef0...2aea`) matches the local build tree except for generated files (`player_command_parser.*`, `player_command_tok.cpp`, build outputs), so rcssserver needs no build-fix patch | Whether rcssserver needs a build-fix patch |
-| Do coaches connect before kick-off in every run? | Spike task in this change | Coach default stays on, or changes to off (user decision Q12) |
+| Do coaches connect before kick-off in every run? | Spike done: coaches connected in every run (2 connects per run); the coach-off run differs too, so coaches are not the cause; no change of the coach default is indicated (user decision Q12) | Coach default stays on, or changes to off (user decision Q12) |
