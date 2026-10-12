@@ -1,0 +1,44 @@
+# Pinned testbed components. Each entry names exactly one immutable reference:
+# a full commit hash, a release tag, or a release tarball with its SHA-256.
+# Branch names are not allowed.
+
+[rcssserver]
+kind = "tarball"
+url = "https://github.com/rcsoccersim/rcssserver/releases/download/rcssserver-19.0.0/rcssserver-19.0.0.tar.gz"
+sha256 = "08abeef0bf94816a9886647fd578da0dc58d40b08bb6a27ed85cddc2acce2aea"
+strip = "rcssserver-19.0.0"
+
+[librcsc]
+kind = "git"
+url = "https://github.com/helios-base/librcsc.git"
+commit = "65e139327751f2f45d9b5a03b1f59fb5ca700cd2"
+
+[helios-base]
+kind = "git"
+url = "https://github.com/helios-base/helios-base.git"
+commit = "66fd63d6f9d022423b8c4430668a2b8510353caf"
+
+[cyrus-lib]
+kind = "git"
+url = "https://github.com/Cyrus2D/cyrus-soccer-simulation-lib.git"
+commit = "6bafd9b9241a11c3149d449a2b8d8c04fc13f31e"
+
+[cppdnn]
+kind = "git"
+url = "https://github.com/Cyrus2D/CppDNN.git"
+commit = "8cb5a5551e1a950dc60e445a5f73f965aa939bbc"
+
+[eigen]
+kind = "git"
+url = "https://gitlab.com/libeigen/eigen.git"
+tag = "3.4.0"
+
+[cyrus-team]
+kind = "git"
+url = "https://github.com/naderzare/cyrus-soccer-simulation-team.git"
+commit = "335497b715770af427e1b0fbaba3f4290b406c3f"
+
+[rcg2data]
+kind = "git"
+url = "https://github.com/hidehisaakiyama/rcg2data.git"
+commit = "30970645c204529faa0baa5f15c83f91c5bcc1fb"

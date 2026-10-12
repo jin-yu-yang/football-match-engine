@@ -1,0 +1,33 @@
+Group: build-fix
+Reason: Boost 1.89 and later have no compiled Boost.System; fall back to the header-only Boost target.
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ebdaff3..99b5fda 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -56,10 +56,24 @@ check_cxx_symbol_exists(select sys/select.h HAVE_SELECT)
+ check_cxx_symbol_exists(socket sys/socket.h HAVE_SOCKET)
+ 
+ # boost
+-find_package(Boost 1.41.0 COMPONENTS system REQUIRED)
++# Boost.System is header-only since 1.69 and the compiled component was removed
++# in newer Boost releases, so fall back to the header-only package.
++if(POLICY CMP0167)
++  cmake_policy(SET CMP0167 NEW)
++endif()
++find_package(Boost 1.41.0 QUIET COMPONENTS system)
++if(NOT Boost_FOUND)
++  find_package(Boost 1.41.0 REQUIRED)
++endif()
+ if(NOT Boost_FOUND)
+   message(FATAL_ERROR "Boost not found!")
+ endif()
++if(NOT TARGET Boost::system)
++  add_library(Boost::system INTERFACE IMPORTED)
++  if(TARGET Boost::headers)
++    set_target_properties(Boost::system PROPERTIES INTERFACE_LINK_LIBRARIES Boost::headers)
++  endif()
++endif()
+ 
+ # zlib
+ find_package(ZLIB)

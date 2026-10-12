@@ -1,0 +1,30 @@
+# Demo: does turning off random noise change the result of HELIOS vs HELIOS?
+# Short matches and a small N, for this machine (4 cores, 3 GB RAM).
+name = "demo-noise"
+matches = 4
+base_seed = 2026
+timeout_s = 900
+
+[arms.A]
+profile = "../profiles/short.toml"
+
+[arms.B]
+profile = "../profiles/short.toml"
+
+[arms.B.overrides.server]
+ball_rand = 0
+player_rand = 0
+kick_rand = 0
+prand_factor_l = 0
+prand_factor_r = 0
+kick_rand_factor_l = 0
+kick_rand_factor_r = 0
+wind_rand = 0
+tackle_rand_factor = 0
+dist_noise_rate = 0
+focus_dist_noise_rate = 0
+land_dist_noise_rate = 0
+land_focus_dist_noise_rate = 0
+
+[arms.B.overrides.player]
+kick_rand_delta_factor = 0

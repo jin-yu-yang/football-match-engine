@@ -1,0 +1,30 @@
+Group: build-fix
+Reason: GCC 15 rejects a const-member assignment in the pinned RapidJSON; remove the unused operator before the build.
+
+diff --git a/vendor/rapidjson.cmake b/vendor/rapidjson.cmake
+index bebbe22..a9c1f0c 100644
+--- a/vendor/rapidjson.cmake
++++ b/vendor/rapidjson.cmake
+@@ -11,6 +11,7 @@ ExternalProject_Add(
+         -DRAPIDJSON_BUILD_TESTS=OFF
+         -DRAPIDJSON_BUILD_DOC=OFF
+         -DRAPIDJSON_BUILD_EXAMPLES=OFF
++    PATCH_COMMAND sh ${CMAKE_CURRENT_LIST_DIR}/patch_rapidjson.sh <SOURCE_DIR>
+     CONFIGURE_COMMAND ""
+     BUILD_COMMAND ""
+     INSTALL_COMMAND ""
+diff --git a/vendor/patch_rapidjson.sh b/vendor/patch_rapidjson.sh
+new file mode 100755
+index 0000000..8d47712
+--- /dev/null
++++ b/vendor/patch_rapidjson.sh
+@@ -0,0 +1,9 @@
++#!/bin/sh
++# The pinned RapidJSON revision defines GenericStringRef::operator= with a body
++# that assigns to its const members `s` and `length`. GCC 15 diagnoses this in
++# the template body even though the operator is never instantiated. Upstream
++# later removed the definition, so drop it here as well. Idempotent.
++set -e
++src="$1"
++sed -i '/GenericStringRef& operator=(const GenericStringRef& rhs) { s = rhs.s; length = rhs.length; }/d' \
++    "${src}/include/rapidjson/document.h"

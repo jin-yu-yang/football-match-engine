@@ -1,0 +1,15 @@
+Group: build-fix
+Reason: GCC 15 needs an explicit <algorithm> include in param_map.cpp.
+
+diff --git a/rcsc/param/param_map.cpp b/rcsc/param/param_map.cpp
+index 777493e..1c6df2a 100644
+--- a/rcsc/param/param_map.cpp
++++ b/rcsc/param/param_map.cpp
+@@ -35,6 +35,7 @@
+ 
+ #include "param_map.h"
+ 
++#include <algorithm>
+ #include <functional>
+ 
+ namespace rcsc {

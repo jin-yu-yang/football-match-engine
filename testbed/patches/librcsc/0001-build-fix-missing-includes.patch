@@ -1,0 +1,18 @@
+Group: build-fix
+Reason: GCC 15 needs explicit <algorithm> and <utility> includes in delaunay_triangulation.cpp.
+
+diff --git a/rcsc/geom/delaunay_triangulation.cpp b/rcsc/geom/delaunay_triangulation.cpp
+index 02ebcc1..f73296a 100644
+--- a/rcsc/geom/delaunay_triangulation.cpp
++++ b/rcsc/geom/delaunay_triangulation.cpp
+@@ -35,8 +35,10 @@
+ 
+ #include "delaunay_triangulation.h"
+ 
++#include <algorithm>
+ #include <cstdint>
+ #include <iostream>
++#include <utility>
+ 
+ //#define DEBUG
+ 

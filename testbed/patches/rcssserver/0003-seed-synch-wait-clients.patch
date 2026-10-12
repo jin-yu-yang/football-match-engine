@@ -1,0 +1,149 @@
+Group: seed
+Reason: Add server::synch_wait_clients (default 0 = upstream); with N > 0 in synch mode, run no simulation steps before kick-off until N players and online coaches are connected, so the pre-kick-off step count does not depend on client start-up timing.
+
+diff --git a/src/timeable.h b/src/timeable.h
+--- a/src/timeable.h
++++ b/src/timeable.h
+@@ -38,6 +38,7 @@
+     void sendSynchVisuals()  { doSendSynchVisuals();  }
+     void sendCoachMessages() { doSendCoachMessages(); }
+     bool sendThink()         { return doSendThink();  }
++    bool holdForClients()    { return doHoldForClients(); }
+     void quit()              { doQuit();              }
+     bool alive() { return isAlive(); }
+ 
+@@ -51,6 +52,7 @@
+     virtual void doSendSynchVisuals()  = 0;
+     virtual void doSendCoachMessages() = 0;
+     virtual bool doSendThink()         = 0;
++    virtual bool doHoldForClients()    { return false; }
+     virtual void doQuit()              = 0;
+     virtual bool isAlive() = 0;
+ };
+diff --git a/src/synctimer.cpp b/src/synctimer.cpp
+--- a/src/synctimer.cpp
++++ b/src/synctimer.cpp
+@@ -54,6 +54,12 @@
+ 
+     while ( getTimeableRef().alive() )
+     {
++        // synch_wait_clients: no simulation steps until the clients are connected
++        if ( getTimeableRef().holdForClients() )
++        {
++            continue;
++        }
++
+         lcmt += TIMEDELTA;
+ 
+         // new simulation step
+diff --git a/src/stadium.h b/src/stadium.h
+--- a/src/stadium.h
++++ b/src/stadium.h
+@@ -82,6 +82,7 @@
+     void doSendSynchVisuals() override;
+     void doSendCoachMessages() override;
+     bool doSendThink() override;
++    bool doHoldForClients() override;
+     void doQuit() override;
+ 
+ protected:
+@@ -130,6 +131,7 @@
+     int M_kick_off_wait;
+     int M_connect_wait;
+     int M_game_over_wait;
++    bool M_clients_waited; //!< true after the synch_wait_clients hold has ended
+ 
+     int M_left_child;
+     int M_right_child;
+diff --git a/src/stadium.cpp b/src/stadium.cpp
+--- a/src/stadium.cpp
++++ b/src/stadium.cpp
+@@ -77,6 +77,7 @@
+       M_kick_off_side( LEFT ),
+       M_last_playon_start( 0 ),
+       M_game_over_wait( 0 ),
++      M_clients_waited( false ),
+       M_left_child( 0 ),
+       M_right_child( 0 )
+ {
+@@ -2390,6 +2391,42 @@
+ }
+ 
+ bool
++Stadium::doHoldForClients()
++{
++    // synch_wait_clients: before kick-off, only receive client messages
++    // until the given number of players and online coaches is connected.
++    const int wait_clients = ServerParam::instance().synchWaitClients();
++    if ( wait_clients <= 0
++         || M_clients_waited
++         || time() != 0
++         || playmode() != PM_BeforeKickOff )
++    {
++        return false;
++    }
++
++    doRecvFromClients();
++
++    int count = static_cast< int >( M_remote_players.size() );
++    for ( OnlineCoachCont::const_reference olc : M_remote_online_coaches )
++    {
++        if ( olc->assigned() )
++        {
++            ++count;
++        }
++    }
++
++    if ( count >= wait_clients )
++    {
++        M_clients_waited = true;
++        return false;
++    }
++
++    std::chrono::microseconds sleep_count( 1000 );
++    std::this_thread::sleep_for( sleep_count );
++    return true;
++}
++
++bool
+ Stadium::doSendThink()
+ {
+     const char * think_command = "(think)";
+diff --git a/src/serverparam.h b/src/serverparam.h
+--- a/src/serverparam.h
++++ b/src/serverparam.h
+@@ -605,6 +605,7 @@
+     int M_foul_cycles;
+ 
+     int M_random_seed;
++    int M_synch_wait_clients;
+     bool M_golden_goal;
+ 
+     // 15.0.0
+@@ -968,6 +969,7 @@
+     int foulCycles() const { return M_foul_cycles; }
+ 
+     int randomSeed() const { return M_random_seed; }
++    int synchWaitClients() const { return M_synch_wait_clients; }
+     bool goldenGoal() const { return M_golden_goal; }
+ 
+     // v15
+diff --git a/src/serverparam.cpp b/src/serverparam.cpp
+--- a/src/serverparam.cpp
++++ b/src/serverparam.cpp
+@@ -960,6 +960,7 @@
+ 
+     // XXX
+     addParam( "random_seed", M_random_seed, "", 999 );
++    addParam( "synch_wait_clients", M_synch_wait_clients, "", 999 );
+     // addParam( "long_kick_power_factor", M_long_kick_power_factor, "", 999 );
+     // addParam( "long_kick_delay", M_long_kick_delay, "", 999 );
+ }
+@@ -1446,6 +1447,7 @@
+     M_foul_exponent = FOUL_EXPONENT;
+     M_foul_cycles = FOUL_CYCLES;
+     M_random_seed = -1;
++    M_synch_wait_clients = 0;
+     M_golden_goal = GOLDEN_GOAL;
+ 
+     // 15.0.0

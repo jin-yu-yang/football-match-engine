@@ -1,0 +1,8 @@
+Type,Side1,Unum1,Time1,Mode1,X1,Y1,Side2,Unum2,Time2,X2,Y2,Success
+Pass,left,2,10,play_on,-10,0,left,5,14,0,5,true
+Pass,left,5,20,play_on,0,5,right,7,24,5,5,false
+Interception,left,5,20,play_on,0,5,right,7,24,5,5,true
+Dribble,right,7,25,play_on,5,5,right,7,30,10,5,true
+Shoot,right,7,31,play_on,10,5,neutral,0,33,52,0,true
+Tackle,left,4,40,play_on,8,5,neutral,0,40,8,5,true
+Pass,right,3,50,play_on,-5,0,right,9,55,5,0,true

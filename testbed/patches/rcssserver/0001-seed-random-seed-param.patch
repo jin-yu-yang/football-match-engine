@@ -1,0 +1,16 @@
+Group: seed
+Reason: Register server::random_seed again, so a given seed fixes the simulator random numbers (stadium.cpp already uses it when it is 0 or more).
+
+diff --git a/src/serverparam.cpp b/src/serverparam.cpp
+index 3516843..81edcf1 100644
+--- a/src/serverparam.cpp
++++ b/src/serverparam.cpp
+@@ -959,7 +959,7 @@ ServerParam::addParams()
+     addParam( "land_focus_dist_noise_rate", M_land_focus_dist_noise_rate, "", 19 );
+ 
+     // XXX
+-    // addParam( "random_seed", M_random_seed, "", 999 );
++    addParam( "random_seed", M_random_seed, "", 999 );
+     // addParam( "long_kick_power_factor", M_long_kick_power_factor, "", 999 );
+     // addParam( "long_kick_delay", M_long_kick_delay, "", 999 );
+ }
