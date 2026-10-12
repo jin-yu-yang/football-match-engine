@@ -13,7 +13,7 @@
 - [x] 2.4 Implement patch application in numeric order with `git apply`, stopping with an error that names the component and patch; test with a temporary git repository
 - [x] 2.5 Implement the build command: fetch each pin into `.testbed/src/`, apply patches, build rcssserver, librcsc and helios-base with autotools and the Cyrus librcsc fork, Cyrus team and rcg2data with CMake, copy CppDNN and Eigen headers, install each librcsc copy into its own prefix, and pass the matching librcsc paths to every dependent build
 - [x] 2.6 Write the manifest (pins, patch checksums, binary and start-script paths) and a loader that fails clearly when the manifest is missing
-- [ ] 2.7 Run the full build once, in the background, in the apply worktree (a fresh checkout), with build-fix and seed patches in place; confirm that each team binary links its own librcsc (`ldd`) and that nothing outside `.testbed/` changed
+- [x] 2.7 Run the full build once, in the background, in the apply worktree (a fresh checkout), with build-fix and seed patches in place; confirm that each team binary links its own librcsc (`ldd`) and that nothing outside `.testbed/` changed
 
 ## 3. Seed patches and reproducibility spike
 
