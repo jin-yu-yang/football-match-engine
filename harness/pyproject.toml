@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matchlab"
+version = "0.1.0"
+description = "Match-lab harness: build the RoboCup testbed, run seeded matches, report A/B experiments."
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+matchlab = "matchlab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["testbed: needs a built testbed (.testbed/manifest.json); skipped otherwise"]
