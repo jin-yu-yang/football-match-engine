@@ -1,0 +1,15 @@
+# Upstream rcssserver 19.0.0 values, with one change: a draw ends the match
+# after normal time (no extra time, no penalty shoot-out).
+[match]
+halves = 2
+half_time = 300   # seconds of match time per half; 300 s = 3000 cycles
+
+[server]
+nr_extra_halfs = 0
+penalty_shoot_outs = false
+
+[teams.left]
+team = "helios"
+
+[teams.right]
+team = "helios"

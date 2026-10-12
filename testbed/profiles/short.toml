@@ -1,0 +1,5 @@
+# A short match for tests: 2 halves of 30 s (600 cycles in total).
+extends = "default"
+
+[match]
+half_time = 30
