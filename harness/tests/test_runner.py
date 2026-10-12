@@ -1,9 +1,12 @@
+import json
+import socket
 import threading
 import time
 
 import pytest
 
 from conftest import alive
+from matchlab.ports import PortInUseError, is_bound, port_set
 from matchlab.profile import load_profile
 from matchlab.runner import run_matches
 
@@ -42,11 +45,34 @@ def test_cancel_stops_batch(fake_testbed, tmp_path, monkeypatch):
                           timeout_s=60, cancel=cancel)
     assert [r.status for r in results] == ["cancelled", "cancelled"]
     assert time.monotonic() - started < 20
+    first = tmp_path / "out" / "0000-normal" / "run.json"
+    assert first.is_file()
+    assert json.loads(first.read_text())["status"] == "cancelled"
+    assert not (tmp_path / "out" / "0001-normal").exists()  # the match that never started has no folder
     children = [int(x) for x in (tmp_path / "fakeout" / "children.txt").read_text().split()]
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline and any(alive(p) for p in children):
         time.sleep(0.05)
     assert not any(alive(p) for p in children)
+
+
+def test_job_error_cancels_other_matches(fake_testbed, tmp_path, monkeypatch):
+    monkeypatch.setenv("FAKE_SERVER_MODE", "hang")
+    started = time.monotonic()
+    # Hold a UDP port of slot 1 for the whole call, so the job on slot 1 raises PortInUseError.
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as blocker:
+        blocker.bind(("", port_set(1).player))
+        with pytest.raises(PortInUseError):
+            run_matches(load_profile("short"), [1, 2], out_dir=tmp_path / "out", manifest=fake_testbed,
+                        workers=2, timeout_s=60)
+    assert time.monotonic() - started < 20  # the slot-0 match must stop early, not run to its 60 s timeout
+    children_file = tmp_path / "fakeout" / "children.txt"
+    children = [int(x) for x in children_file.read_text().split()] if children_file.exists() else []
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and any(alive(p) for p in children):
+        time.sleep(0.05)
+    assert not any(alive(p) for p in children)
+    assert not is_bound(port_set(0).player)  # the slot-0 server has exited and released its port
 
 
 def test_unknown_team_is_rejected_before_any_process(fake_testbed, tmp_path):

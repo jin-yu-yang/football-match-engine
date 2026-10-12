@@ -67,6 +67,9 @@ def run_matches(profile: Profile, seeds: Sequence[int], *, out_dir: Path, manife
             record = read_record(run_dir)
             return MatchResult(index, swapped, seed, run_dir, record["status"], metrics,
                                record["reproducibility"], record.get("missed_cycles") or 0)
+        except BaseException:
+            cancel.set()  # a failed job stops the other running matches at once
+            raise
         finally:
             slots.put(slot)
 
@@ -74,7 +77,8 @@ def run_matches(profile: Profile, seeds: Sequence[int], *, out_dir: Path, manife
     try:
         futures = [pool.submit(job, *j) for j in jobs]
         return [future.result() for future in futures]
-    except KeyboardInterrupt:
+    except BaseException:
+        # Any failure, Ctrl-C included, stops the running matches before the error propagates.
         cancel.set()  # running matches stop their process groups; queued matches return "cancelled"
         raise
     finally:
