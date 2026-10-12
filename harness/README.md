@@ -58,11 +58,15 @@ one cycle ("Someone missed a cycle"); such a match is not reproducible.
 `run.json` and the report count these missed cycles.
 
 Status: **differs** (statistical reproducibility). The same profile and seed
-give the same distribution of results, not the same game log. The patched
-server makes everything before kick-off identical: every client connects at
-step 0 and kick-off is at step 300. After kick-off, the order and timing of
-client commands and the server's shared random generator still vary, even
-with all noise set to 0. Coaches stay on by default; they are not the cause.
+are expected to give the same distribution of results, not the same game log
+(see design note D5 in the change). The patched server makes the start-up
+identical: every client connects at step 0, and the client commands of the
+300 steps before kick-off (steps 0 to 299) are the same in both runs. The
+first difference is in the commands of step 300, the first step of play. The
+game log has no frames before that, so the check reports the first frame,
+`(show 1 ...)` at cycle 1. From there on, the order and timing of client
+commands and the server's shared random generator still vary, even with all
+noise set to 0. Coaches stay on by default; they are not the cause.
 The check skips two line prefixes that hold no play data: `(server_param`
 (the run's log folder paths) and `(msg ` (a result line with a time stamp).
 Exact replay is planned for our own engine.
