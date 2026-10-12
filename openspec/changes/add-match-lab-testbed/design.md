@@ -13,7 +13,7 @@ build fixes:
 
 | Component | Upstream | Pin | Build system | Uncommitted local fixes |
 |---|---|---|---|---|
-| rcssserver | `rcsoccersim/rcssserver` | release tarball `rcssserver-19.0.0.tar.gz`, SHA-256 `08abeef0...2aea` | autotools | unknown |
+| rcssserver | `rcsoccersim/rcssserver` | release tarball `rcssserver-19.0.0.tar.gz`, SHA-256 `08abeef0...2aea` | autotools | none in the sources (checked in Task 4; the local tree differs only in generated files) |
 | librcsc | `helios-base/librcsc` | `65e1393` | autotools (`--disable-unit-test`) | missing includes; simdjson `static_cast<formatter*>` |
 | helios-base | `helios-base/helios-base` | `66fd63d` | autotools (`--with-librcsc`) | none |
 | Cyrus librcsc fork | `Cyrus2D/cyrus-soccer-simulation-lib` | `6bafd9b` | CMake | Boost.System fallback; `#include <algorithm>` |
@@ -27,6 +27,20 @@ compiled Boost.System library. That is why the CMake files of rcssserver,
 librcsc and helios-base fail here, and why the local builds of these three
 used autotools. A librcsc build is also installed in `/usr/local`; CMake
 `find_library(... PATHS ...)` finds it before any `PATHS` entry.
+
+**Patch set after apply** (the table above shows the local trees before
+apply). The real build in Task 6 also needed a header-only Boost.System fix
+for the three autotools components, because the `AX_BOOST_SYSTEM` check
+aborts when no compiled library exists. Final set, 12 files in
+`testbed/patches/`:
+
+| Component | Build fix | Seed / determinism |
+|---|---|---|
+| rcssserver | 0002 header-only Boost.System (generated `configure`) | 0001 `random_seed` parameter; 0003 `synch_wait_clients` hold |
+| librcsc | 0001 includes; 0002 simdjson; 0004 header-only Boost.System (`m4`) | 0003 `RCSC_RANDOM_SEED` |
+| helios-base | 0001 header-only Boost.System (`m4`, same content as librcsc 0004) | none |
+| Cyrus librcsc fork | 0001 Boost.System fallback; 0002 `<algorithm>` | 0003 `RCSC_RANDOM_SEED` (same patch as librcsc 0003) |
+| Cyrus team | 0001 CMake dependencies; 0002 RapidJSON for GCC 15 | none |
 
 Checked during planning: rcg2data builds with `-DLIBRCSC_LIB` and
 `-DLIBRCSC_INCLUDE_DIR` against librcsc 20 (no Boost dependency), writes its
