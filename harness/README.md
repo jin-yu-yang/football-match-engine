@@ -8,7 +8,7 @@ match engine.
 
 - A C++17 compiler, CMake 3.16 or later, autoconf, automake, libtool
 - Boost headers, zlib, flex, bison, Git, curl access to GitHub and GitLab
-- Python 3.11 or later
+- Python 3.11.4 or later
 
 ## Install
 
@@ -49,6 +49,8 @@ and loss rates with Wilson intervals. Values use the view of the focus team
     harness/.venv/bin/matchlab check-repro --profile short --seed 42 --out runs/repro-42
 
 The check runs one match twice and compares the game logs byte for byte.
+`check-repro --seed` takes a match seed. `run --seed` and an experiment's
+`base_seed` are base seeds: the match seeds derive from them.
 Every experiment also replays arm A's first seed once and reports the result.
 
 The harness runs the server in synch mode and starts the teams one after the
@@ -59,8 +61,9 @@ one cycle ("Someone missed a cycle"); such a match is not reproducible.
 
 Status: **differs** (statistical reproducibility). The same profile and seed
 are expected to give the same distribution of results, not the same game log
-(see design note D5 in the change). The patched server makes the start-up
-identical: every client connects at step 0, and the client commands of the
+(see design note D5 of the OpenSpec change `add-match-lab-testbed`; after
+archive it is under `openspec/changes/archive/`). The patched server makes the
+start-up identical: every client connects at step 0, and the client commands of the
 300 steps before kick-off (steps 0 to 299) are the same in both runs. The
 first difference is in the commands of step 300, the first step of play. The
 game log has no frames before that, so the check reports the first frame,
