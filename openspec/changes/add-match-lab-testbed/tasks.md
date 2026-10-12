@@ -26,9 +26,9 @@
 
 ## 4. Profiles (match-runner)
 
-- [ ] 4.1 Implement the TOML profile loader with `extends`, overrides and validation of top-level sections and team names (tests first)
-- [ ] 4.2 Implement the canonical form and SHA-256 profile hash; test equal-values-equal-hash and different-values-different-hash
-- [ ] 4.3 Add the `default`, `noise-off` and `short` presets; test that `noise-off` zeroes every server noise parameter and `short` is at most 600 cycles
+- [x] 4.1 Implement the TOML profile loader with `extends`, overrides and validation of top-level sections and team names (tests first)
+- [x] 4.2 Implement the canonical form and SHA-256 profile hash; test equal-values-equal-hash and different-values-different-hash
+- [x] 4.3 Add the `default`, `noise-off` and `short` presets; test that `noise-off` zeroes every server noise parameter and `short` is at most 600 cycles
 - [ ] 4.4 Implement the mapping from a resolved profile to rcssserver command-line parameters and team start options
 
 ## 5. Match runner (match-runner)
