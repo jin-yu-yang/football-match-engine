@@ -11,8 +11,8 @@
 - [x] 2.2 Check that the rcssserver release tarball matches the pinned SHA-256 and that its `src/` equals the local `~/rcssserver-19.0.0/src` (except build output); record the result (needed patch or none)
 - [x] 2.3 Capture the local build fixes as numbered build-fix patch files with reason headers: librcsc (includes, simdjson), Cyrus team (CMake Boost fallback, librcsc `HINTS`, CppDNN and Eigen search, RapidJSON patch script), Cyrus librcsc fork (CMake Boost fallback, `<algorithm>`)
 - [x] 2.4 Implement patch application in numeric order with `git apply`, stopping with an error that names the component and patch; test with a temporary git repository
-- [ ] 2.5 Implement the build command: fetch each pin into `.testbed/src/`, apply patches, build rcssserver, librcsc and helios-base with autotools and the Cyrus librcsc fork, Cyrus team and rcg2data with CMake, copy CppDNN and Eigen headers, install each librcsc copy into its own prefix, and pass the matching librcsc paths to every dependent build
-- [ ] 2.6 Write the manifest (pins, patch checksums, binary and start-script paths) and a loader that fails clearly when the manifest is missing
+- [x] 2.5 Implement the build command: fetch each pin into `.testbed/src/`, apply patches, build rcssserver, librcsc and helios-base with autotools and the Cyrus librcsc fork, Cyrus team and rcg2data with CMake, copy CppDNN and Eigen headers, install each librcsc copy into its own prefix, and pass the matching librcsc paths to every dependent build
+- [x] 2.6 Write the manifest (pins, patch checksums, binary and start-script paths) and a loader that fails clearly when the manifest is missing
 - [ ] 2.7 Run the full build once, in the background, in the apply worktree (a fresh checkout), with build-fix and seed patches in place; confirm that each team binary links its own librcsc (`ldd`) and that nothing outside `.testbed/` changed
 
 ## 3. Seed patches and reproducibility spike
