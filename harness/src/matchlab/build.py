@@ -209,6 +209,7 @@ def build_all(ctx: BuildContext, pins: dict[str, Pin], only: Sequence[str] | Non
             components = dict(load_manifest(ctx.work / "manifest.json").components)
         except ManifestError as exc:
             raise BuildError("a partial build needs an earlier full build; run `matchlab build` first") from exc
+    (ctx.work / "manifest.json").unlink(missing_ok=True)  # a failed build must not leave the old manifest
     for name in COMPONENTS:
         if name in names:
             components[name] = build_component(name, pins[name], ctx)

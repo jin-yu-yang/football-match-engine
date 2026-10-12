@@ -28,3 +28,22 @@ def test_bound_port_is_seen_without_binding_it():
         s.bind(("", port))
         assert is_bound(port)
         wait_until_bound(port, timeout_s=1.0)
+
+
+def test_is_bound_closes_its_files(recwarn):
+    import gc
+
+    for _ in range(3):
+        is_bound(port_set(42).player)
+    gc.collect()
+    assert not [w for w in recwarn if issubclass(w.category, ResourceWarning)]
+
+
+def test_is_bound_ignores_unreadable_tables(monkeypatch):
+    import builtins
+
+    def refuse(*args, **kwargs):
+        raise PermissionError("no")
+
+    monkeypatch.setattr(builtins, "open", refuse)
+    assert is_bound(port_set(43).player) is False

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import math
 import re
 import tomllib
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ from .manifest import Manifest, load_manifest
 from .profile import load_profile
 from .repro import replay_and_compare
 from .runner import MatchResult, run_matches
-from .seeds import match_seeds
+from .seeds import MAX_SEED, match_seeds
 
 _NAME = re.compile(r"^[A-Za-z0-9_-]+$")
 _OVERRIDE_SECTIONS = frozenset({"match", "server", "player", "teams"})
@@ -59,11 +60,14 @@ class ExperimentResult:
     report: dict
 
 
-def _int(raw: dict, key: str, minimum: int) -> int:
+def _int(raw: dict, key: str, minimum: int, maximum: int | None = None) -> int:
     value = raw.get(key)
-    if not isinstance(value, int) or isinstance(value, bool) or value < minimum:
+    in_range = isinstance(value, int) and not isinstance(value, bool) and value >= minimum
+    if in_range and (maximum is None or value <= maximum):
+        return value
+    if maximum is None:
         raise ExperimentError(f"{key}: must be a whole number of {minimum} or more")
-    return value
+    raise ExperimentError(f"{key}: must be a whole number from {minimum} to {maximum}")
 
 
 def load_experiment(path: Path) -> Experiment:
@@ -82,8 +86,8 @@ def load_experiment(path: Path) -> Experiment:
     if not isinstance(swap, bool):
         raise ExperimentError("swap_sides: must be true or false")
     timeout = raw.get("timeout_s", 3600.0)
-    if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or timeout <= 0:
-        raise ExperimentError("timeout_s: must be a number of seconds greater than 0")
+    if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not math.isfinite(timeout) or timeout <= 0:
+        raise ExperimentError("timeout_s: must be a finite number of seconds greater than 0")
     arms_raw = raw.get("arms", {})
     if not isinstance(arms_raw, dict) or set(arms_raw) != {"A", "B"}:
         raise ExperimentError("define exactly two arms A and B ([arms.A] and [arms.B])")
@@ -105,13 +109,13 @@ def load_experiment(path: Path) -> Experiment:
         if bad:
             raise ExperimentError(f"arms.{key}.overrides: unknown section(s): {', '.join(bad)}")
         arms[key] = Arm(key, profile, overrides)
-    return Experiment(name, _int(raw, "matches", 1), _int(raw, "base_seed", 0), swap, float(timeout), arms, path)
+    return Experiment(name, _int(raw, "matches", 1), _int(raw, "base_seed", 0, MAX_SEED), swap, float(timeout), arms, path)
 
 
 def _replay_first_match(first: MatchResult, profile, out: Path, manifest: Manifest, timeout_s: float) -> dict:
     result = {"checked_run": "A/0000-normal", "status": "not-checked", "first_difference": None,
               "skipped_prefixes": [], "reason": None}
-    if first.status != "ok":
+    if first.status not in ("ok", "extraction-failed"):  # with extraction-failed the game finished and its log exists
         result["reason"] = f"the original match ended with status {first.status}"
         return result
     try:

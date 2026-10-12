@@ -36,6 +36,10 @@ def test_load_and_arm_override(tmp_path):
 
 @pytest.mark.parametrize("change, message", [
     (("matches = 2", "matches = 0"), "matches"),
+    (("base_seed = 42", "base_seed = 2147483648"), "base_seed: must be a whole number from 0 to 2147483647"),
+    (("base_seed = 42", "base_seed = -1"), "base_seed: must be a whole number from 0 to 2147483647"),
+    (("timeout_s = 30", "timeout_s = inf"), "timeout_s"),
+    (("timeout_s = 30", "timeout_s = nan"), "timeout_s"),
     (("[arms.B]", "[arms.C]"), "arms A and B"),
     (('name = "demo"', 'name = "bad name"'), "name"),
     (("[arms.B.overrides.server]", "[arms.B.overrides.noise]"), "overrides"),
@@ -100,3 +104,34 @@ def test_existing_experiment_folder_is_refused(fake_testbed, tmp_path):
     (tmp_path / "out").mkdir()
     with pytest.raises(ExperimentError, match="already exists"):
         run_experiment(write_exp(tmp_path, BODY), out_dir=tmp_path / "out", manifest=fake_testbed)
+
+
+def test_largest_base_seed_is_accepted(tmp_path):
+    exp = load_experiment(write_exp(tmp_path, BODY.replace("base_seed = 42", "base_seed = 2147483647")))
+    assert exp.base_seed == 2147483647
+
+
+def test_extraction_failed_original_is_still_replayed(tmp_path, monkeypatch):
+    import matchlab.experiment as experiment_mod
+    from matchlab.runner import MatchResult
+
+    calls = []
+
+    class Repro:
+        status = "identical"
+        first_difference = None
+        skipped = ()
+
+    def fake_replay(profile, seed, run_dir, out, manifest, **kwargs):
+        calls.append((seed, run_dir))
+        return Repro()
+
+    monkeypatch.setattr(experiment_mod, "replay_and_compare", fake_replay)
+    profile = type("P", (), {"hash": "h"})()
+    first = MatchResult(0, False, 7, tmp_path / "run", "extraction-failed", None, "not-checked", 0)
+    result = experiment_mod._replay_first_match(first, profile, tmp_path, None, 10.0)
+    assert calls == [(7, tmp_path / "run")]
+    assert result["status"] == "identical"
+    timed_out = MatchResult(0, False, 7, tmp_path / "run", "timeout", None, "not-checked", 0)
+    result = experiment_mod._replay_first_match(timed_out, profile, tmp_path, None, 10.0)
+    assert len(calls) == 1 and result["status"] == "not-checked"

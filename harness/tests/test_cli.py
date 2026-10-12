@@ -31,7 +31,7 @@ def test_ctrl_c_exits_130(monkeypatch, capsys):
 
     monkeypatch.setattr(cli, "run_experiment", interrupted)
     assert cli.main(["experiment", "exp.toml"]) == 130
-    assert "cancelled" in capsys.readouterr().err
+    assert "cancelled: all match processes were stopped" in capsys.readouterr().err
 
 
 def test_check_repro_exit_codes(monkeypatch, tmp_path):
@@ -77,3 +77,44 @@ def test_non_positive_timeout_is_a_usage_error(tmp_path, capsys):
                   "--timeout", "0"])
     assert exc.value.code == 2
     assert "must be greater than 0" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("command", [["run", "--matches", "1"], ["check-repro"]])
+@pytest.mark.parametrize("seed", ["-1", "2147483648", "abc"])
+def test_seed_out_of_range_is_a_usage_error(command, seed, tmp_path, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main([command[0], "--profile", "short", "--seed", seed, "--out", str(tmp_path / "x"), *command[1:]])
+    assert exc.value.code == 2
+    capsys.readouterr()
+
+
+def test_seed_bounds_are_accepted():
+    assert cli._seed("0") == 0
+    assert cli._seed("2147483647") == 2147483647
+
+
+def test_seed_help_texts_say_what_the_seed_is(capsys):
+    for command, text in (("run", "base seed; match seeds derive from it"),
+                          ("check-repro", "the match seed itself (not a base seed)")):
+        with pytest.raises(SystemExit):
+            cli.main([command, "--help"])
+        assert " ".join(capsys.readouterr().out.split()).count(text) == 1
+
+
+@pytest.mark.parametrize("value", ["inf", "nan"])
+def test_non_finite_timeout_is_a_usage_error(value, tmp_path, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["check-repro", "--profile", "short", "--seed", "1", "--out", str(tmp_path / "r"),
+                  "--timeout", value])
+    assert exc.value.code == 2
+    assert "must be greater than 0" in capsys.readouterr().err
+
+
+def test_ctrl_c_during_build_says_cancelled(monkeypatch, capsys):
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "load_pins", lambda path: {})
+    monkeypatch.setattr(cli, "build_all", interrupted)
+    assert cli.main(["build"]) == 130
+    assert capsys.readouterr().err.strip() == "cancelled"

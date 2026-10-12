@@ -4,6 +4,7 @@ import tarfile
 
 import pytest
 
+import matchlab.build as build_mod
 from matchlab.build import RECIPES, BuildContext, BuildError, _fmt, fetch
 from matchlab.pins import Pin
 
@@ -69,3 +70,25 @@ def test_git_pin_checks_out_exact_commit(tmp_path):
     c = ctx(tmp_path)
     fetch(pin, c.src / "demo", c, tmp_path / "log")
     assert (c.src / "demo" / "f").read_text() == "v1\n"
+
+
+def test_failed_rebuild_leaves_no_old_manifest(fake_testbed, tmp_path, monkeypatch):
+    from matchlab.manifest import write_manifest
+    from matchlab.pins import COMPONENTS
+
+    c = ctx(tmp_path)
+    c.work.mkdir()
+    manifest_file = c.work / "manifest.json"
+    write_manifest(fake_testbed, manifest_file)
+
+    def failing(name, pin, context):
+        raise BuildError(f"{name} failed")
+
+    monkeypatch.setattr(build_mod, "build_component", failing)
+    with pytest.raises(BuildError, match="rcssserver failed"):
+        build_mod.build_all(c, {name: None for name in COMPONENTS}, only=["rcssserver"])
+    assert not manifest_file.exists()
+    write_manifest(fake_testbed, manifest_file)
+    with pytest.raises(BuildError, match="rcssserver failed"):
+        build_mod.build_all(c, {name: None for name in COMPONENTS})
+    assert not manifest_file.exists()

@@ -33,7 +33,9 @@ while True:
     for line in lines[seen:]:
         print(line, flush=True)
     seen = len(lines)
-    if mode in ("ok", "gaveup") and sum("player (" in line for line in lines) >= 22:
+    # like the real hold patch: wait for all players and coaches, not only for the players
+    if mode in ("ok", "gaveup") and sum("player (" in line or "coach (" in line
+                                         for line in lines) >= int(args["server::synch_wait_clients"]):
         break
     time.sleep(0.05)
 for _ in range(int(os.environ.get("FAKE_MISSED", "0"))):

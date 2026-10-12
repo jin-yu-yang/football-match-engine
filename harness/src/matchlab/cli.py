@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -17,7 +18,7 @@ from .ports import PortInUseError
 from .profile import Profile, ProfileError, load_profile
 from .repro import ReproError, check_reproducibility
 from .runner import run_matches
-from .seeds import match_seeds
+from .seeds import MAX_SEED, match_seeds
 
 
 def _positive_int(text: str) -> int:
@@ -29,8 +30,15 @@ def _positive_int(text: str) -> int:
 
 def _positive_float(text: str) -> float:
     value = float(text)
-    if not value > 0:  # also rejects nan
-        raise argparse.ArgumentTypeError("must be greater than 0")
+    if not (math.isfinite(value) and value > 0):  # rejects inf and nan
+        raise argparse.ArgumentTypeError("must be greater than 0 and finite")
+    return value
+
+
+def _seed(text: str) -> int:
+    value = int(text)
+    if not 0 <= value <= MAX_SEED:
+        raise argparse.ArgumentTypeError(f"must be from 0 to {MAX_SEED}")
     return value
 
 
@@ -94,7 +102,7 @@ def _parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run", help="run N matches for one profile")
     run.add_argument("--profile", required=True, help="preset name or path to a profile TOML file")
     run.add_argument("--matches", type=_positive_int, default=1)
-    run.add_argument("--seed", type=int, required=True, help="base seed; match seeds derive from it")
+    run.add_argument("--seed", type=_seed, required=True, help="base seed; match seeds derive from it")
     run.add_argument("--out", type=Path, required=True, help="output folder for the run folders")
     run.add_argument("--workers", type=_positive_int, default=1)
     run.add_argument("--timeout", type=_positive_float, default=3600.0, help="seconds per match")
@@ -109,7 +117,7 @@ def _parser() -> argparse.ArgumentParser:
 
     rep = sub.add_parser("check-repro", help="run one match twice and compare the game logs")
     rep.add_argument("--profile", required=True)
-    rep.add_argument("--seed", type=int, required=True, help="the match seed")
+    rep.add_argument("--seed", type=_seed, required=True, help="the match seed itself (not a base seed)")
     rep.add_argument("--out", type=Path, required=True)
     rep.add_argument("--timeout", type=_positive_float, default=3600.0)
     rep.set_defaults(handler=_cmd_check_repro)
@@ -129,7 +137,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     except KeyboardInterrupt:
         # run_matches has already stopped every running match before the interrupt reaches here.
-        print("cancelled: all match processes were stopped", file=sys.stderr)
+        if args.command == "build":
+            print("cancelled", file=sys.stderr)
+        else:
+            print("cancelled: all match processes were stopped", file=sys.stderr)
         return 130
 
 
